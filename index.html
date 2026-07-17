@@ -3,175 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nitro Flip: World Tour PWA</title>
-    <link rel="manifest" href="./manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Nitro Flip: Evolution 3D</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #030308; user-select: none; touch-action: none; }
+        body { margin: 0; overflow: hidden; font-family: 'Impact', 'Segoe UI', sans-serif; background: #05050d; user-select: none; touch-action: none; }
         #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; color: white; }
-        .overlay { pointer-events: auto; background: linear-gradient(135deg, rgba(5,5,15,0.98), rgba(10,10,25,0.99)); position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction:column; align-items:center; justify-content:center; text-align: center; }
+        .overlay { pointer-events: auto; background: radial-gradient(circle at center, rgba(10,15,30,0.95) 0%, rgba(3,4,8,0.99) 100%); position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction:column; align-items:center; justify-content:center; text-align: center; }
         
-        h1 { font-size: 32px; margin-bottom: 2px; color: #00ffcc; text-shadow: 0 0 15px rgba(0,255,204,0.5); text-transform: uppercase; letter-spacing: 3px; }
-        h2 { font-size: 13px; color: #ff0055; margin-top: 0; letter-spacing: 2px; }
-        h3 { margin-top: 5px; color: #00ffcc; font-size: 16px;}
+        h1 { font-size: 42px; margin: 0; color: #fff; text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; letter-spacing: 4px; font-style: italic; }
+        h2 { font-size: 14px; color: #00ffcc; margin: 5px 0 20px 0; letter-spacing: 3px; font-weight: normal; font-family: 'Segoe UI', sans-serif; }
+        
+        .row-layout { display: flex; gap: 25px; width: 92%; max-width: 1050px; height: 55vh; align-items: stretch; margin-bottom: 15px; }
+        .panel { background: rgba(5, 10, 25, 0.75); border: 2px solid rgba(0, 255, 204, 0.15); border-radius: 16px; padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; backdrop-filter: blur(10px); box-shadow: inset 0 0 20px rgba(0,255,204,0.05); }
+        
+        /* BOTONES ESTILO RACING ACCENT */
+        button { padding: 12px 24px; font-size: 15px; font-weight: bold; font-style: italic; cursor: pointer; background: linear-gradient(135deg, #ff0055 0%, #990022 100%); border: none; color: white; border-radius: 6px; box-shadow: 0 4px 15px rgba(255, 0, 85, 0.4); transition: all 0.2s; text-transform: uppercase; border-bottom: 3px solid rgba(0,0,0,0.3); }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #222 !important; border-color: #333 !important; box-shadow: none; opacity: 0.4; color: #777; }
+        .btn-select { background: linear-gradient(135deg, #00ffcc 0%, #008866 100%); box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3); color: #000; }
+        
+        input[type="text"] { padding: 12px; font-size: 18px; border-radius: 8px; border: 2px solid #00ffcc; background: #0a0e1a; color: white; text-align: center; margin-bottom: 20px; font-family: 'Segoe UI'; }
+        
+        .selector-btn { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); margin: 5px 0; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 12px; font-size: 14px; color: white; font-family: 'Segoe UI'; border-radius: 8px; }
+        .selector-btn.active { border-color: #00ffcc; background: rgba(0, 255, 204, 0.1); box-shadow: 0 0 10px rgba(0,255,204,0.2); }
+        
+        /* ESTADISTICAS ESTILO GOOGLE PLAY (IMAGEN 1) */
+        .stat-row { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; font-family: 'Segoe UI'; font-size: 12px; color: #aaa; }
+        .stat-bar-bg { width: 120px; height: 8px; background: #222; border-radius: 2px; overflow: hidden; display: flex; gap: 2px; }
+        .stat-chunk { flex: 1; height: 100%; background: #444; }
+        .stat-chunk.fill-speed { background: #00bfff; }
+        .stat-chunk.fill-acc { background: #ffcc00; }
+        .stat-chunk.fill-handling { background: #00ff66; }
+        .stat-chunk.fill-nitro { background: #ff0055; }
 
-        .row-layout { display: flex; gap: 15px; width: 95%; max-width: 1100px; height: 58vh; align-items: stretch; }
-        .panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 15px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; }
+        /* HUD EN CARRERA */
+        .hud-top { position: absolute; top: 15px; left: 20px; right: 20px; display: flex; justify-content: space-between; font-size: 18px; font-style: italic; text-shadow: 2px 2px 4px #000; }
+        .pos-indicator { font-size: 48px; color: #ffcc00; font-weight: bold; font-style: italic; margin-right: 5px; text-shadow: 0 0 10px rgba(255,204,0,0.5); }
         
-        button { padding: 10px 20px; font-size: 13px; font-weight: bold; cursor: pointer; background: linear-gradient(90deg, #ff0055, #ff5500); border: none; color: white; border-radius: 6px; box-shadow: 0 4px 12px rgba(255, 0, 85, 0.2); transition: all 0.15s ease; }
-        button:active { transform: scale(0.96); }
-        button:disabled { background: #222 !important; box-shadow: none; opacity: 0.3; color: #666; cursor: not-allowed; }
-        
-        input[type="text"] { padding: 10px; font-size: 16px; border-radius: 6px; border: 1px solid #00ffcc; background: #111; color: white; text-align: center; margin-bottom: 15px; }
-        
-        .selector-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); margin: 3px 0; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 10px; font-size: 13px; color: white;}
-        .selector-btn.active { background: #00ffcc !important; color: #000; border-color: #00ffcc; font-weight: bold; }
-        
-        .hud-top { position: absolute; top: 12px; left: 15px; right: 15px; display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
-        .bar-container { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        .bar-outer { width: 90px; height: 8px; background: #111; border-radius: 4px; overflow: hidden; }
-        .bar-fill-nitro { height: 100%; width: 0%; background: linear-gradient(90deg, #00ffff, #00ffcc); }
-        .bar-fill-xp { height: 100%; width: 0%; background: linear-gradient(90deg, #9900ff, #ff00ff); }
-        
-        .touch-controls { position: absolute; bottom: 15px; left: 0; width: 100%; display: none; justify-content: space-between; padding: 0 30px; box-sizing: border-box; pointer-events: none; }
-        .touch-btn { pointer-events: auto; width: 68px; height: 68px; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; color: white; font-weight: bold; font-size: 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .touch-btn:active { background: rgba(0, 255, 204, 0.3); border-color: #00ffcc; }
-        
-        #xp-popup { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 26px; font-weight: bold; color: #ff00ff; text-shadow: 0 0 10px #ff00ff; display: none; animation: pop 0.6s ease-out; z-index: 100; }
-        @keyframes pop { 0% { transform: translate(-50%, -20%) scale(0.6); opacity: 0; } 50% { opacity: 1; } 100% { transform: translate(-50%, -80%) scale(1.1); opacity: 0; } }
+        /* CONTROLES TÁCTILES */
+        .touch-controls { position: absolute; bottom: 25px; left: 0; width: 100%; display: none; justify-content: space-between; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
+        .touch-btn { pointer-events: auto; width: 75px; height: 75px; background: rgba(5,10,25,0.6); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; color: white; font-size: 24px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .touch-btn:active { background: rgba(0, 255, 204, 0.4); border-color: #00ffcc; }
     </style>
 </head>
 <body>
 
-    <div id="xp-popup">+100 XP FLIP!</div>
-
     <div id="ui">
-        <!-- REGISTRO DE USUARIO -->
+        <!-- PANTALLA LOGIN -->
         <div id="screen-login" class="overlay">
             <h1>NITRO FLIP</h1>
-            <h2>CREA TU PERFIL DE PILOTO</h2>
-            <input type="text" id="username-input" placeholder="Nombre de Piloto" maxlength="12">
-            <button onclick="registerUser()">INGRESAR AL PADDOCK</button>
+            <h2>EVOLUTION RACING 3D</h2>
+            <input type="text" id="username-input" placeholder="PILOTO ID" maxlength="12">
+            <button onclick="registerUser()">INGRESAR AL GARAJE</button>
         </div>
 
         <!-- MENÚ PRINCIPAL -->
         <div id="menu-main" class="overlay" style="display:none">
-            <h1 id="welcome-title">BIENVENIDO</h1>
-            <h2>WORLD TOUR & VERSUS MODE</h2>
-            <div style="margin-bottom:12px; font-size:13px; color:#aaa; line-height: 1.6;">
-                👤 PILOTO: <span id="main-user" style="color:#00ffcc;">-</span> | 👑 LVL: <span id="main-lvl" style="color:#ff00ff; font-weight:bold;">1</span><br>
-                🏁 HISTORIAL: <span id="main-stats" style="color:#fff;">W: 0 / L: 0</span> | XP: <span id="main-xp">0</span>
-            </div>
-            <div style="display:flex; gap:10px; width:320px; flex-direction:column;">
-                <button onclick="openTracks(false)">🗺️ CONTRARRELOJ SOLITARIO</button>
-                <button onclick="openTracks(true)" style="background: linear-gradient(90deg, #d4af37, #ff5500);">🏎️ MODO VS (CARRERA IA)</button>
-                <button onclick="openGarage()" style="background: linear-gradient(90deg, #00bfff, #0022ff);">🚗 TIENDA Y TUNING GARAJE</button>
+            <h1 id="welcome-title">GARAJE PRINCIPAL</h1>
+            <h2 id="player-tag">-</h2>
+            <div style="display:flex; gap:15px; width:340px; flex-direction:column;">
+                <button onclick="openTracks(false)">⏱️ CONTRARRELOJ</button>
+                <button onclick="openTracks(true)" style="background: linear-gradient(135deg, #ffaa00 0%, #995500 100%); box-shadow: 0 4px 15px rgba(255,170,0,0.3);">🏎️ MODO VS (CARRERA IA)</button>
+                <button onclick="openGarage()" class="btn-select">🔧 TIENDA & TUNING DE AUTOS</button>
             </div>
         </div>
 
-        <!-- SELECCIÓN DE PISTAS MUNDIALES -->
+        <!-- SELECCIÓN DE PISTAS -->
         <div id="menu-tracks" class="overlay" style="display:none">
-            <h1 id="tracks-header-title">SELECCIONAR CIRCUITO</h1>
-            <p style="margin:0 0 10px 0; font-size:13px; color:#ff00ff;">Desbloqueo según tu XP Acumulada</p>
-            <div id="vs-difficulty-box" style="margin-bottom:10px; display:none;">
-                <label style="font-size:13px; color:#aaa; margin-right:5px;">Dificultad IA:</label>
-                <select id="vs-difficulty" style="background:#222; color:white; padding:5px; border:1px solid #555; border-radius:4px;">
-                    <option value="facil">Amateur (Fácil)</option>
-                    <option value="medio">Pro (Medio)</option>
-                    <option value="extremo">Fórmula 1 (Extremo)</option>
+            <h1>SELECCIONAR CIRCUITO</h1>
+            <h2>DESBLOQUEA PISTAS CON TU XP</h2>
+            <div id="vs-difficulty-box" style="margin-bottom:15px; display:none; font-family:'Segoe UI';">
+                <label style="color:#aaa; margin-right:8px;">DIFICULTAD IA:</label>
+                <select id="vs-difficulty" style="background:#0f1424; color:white; padding:8px 15px; border:1px solid #00ffcc; border-radius:6px; font-weight:bold;">
+                    <option value="facil">AMATEUR</option>
+                    <option value="medio" selected>PROFESIONAL</option>
+                    <option value="extremo">FÓRMULA 1 (EXTREMO)</option>
                 </select>
             </div>
-            <div class="row-layout" style="max-width:800px; height:45vh;">
+            <div class="row-layout" style="max-width:700px; height:40vh;">
                 <div class="panel" id="tracks-list" style="gap:5px;"></div>
             </div>
-            <button onclick="changeScreen('menu-main')" style="background:#333; box-shadow:none; margin-top:10px;">VOLVER</button>
+            <button onclick="changeScreen('menu-main')" style="background:#222; box-shadow:none;">VOLVER</button>
         </div>
 
-        <!-- TIENDA Y GARAJE -->
+        <!-- TIENDA / GARAJE AVANZADO (ESTILO IMAGEN 1) -->
         <div id="menu-garage" class="overlay" style="display:none">
-            <h1>CONCESIONARIO Y TUNING</h1>
-            <p style="font-size: 14px; color:#ffcc00; margin:0 0 10px 0;">💰 CRÉDITOS DISPONIBLES: $<span id="garage-coins">0</span></p>
+            <h1>CONCESIONARIO EXCLUSIVO</h1>
+            <h2 style="color: #ffcc00;">SALDO: $<span id="garage-coins">0</span> CREDITS</h2>
+            
             <div class="row-layout">
-                <div class="panel" id="garage-car-list" style="gap:4px;"></div>
-                <div class="panel">
-                    <h3 id="selected-car-title" style="margin-top:0;">Vehículo</h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:5px;">
-                        <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                            <div style="font-size:11px; color:#00ffcc;">⚙️ MOTOR (STAGE)</div>
-                            <div id="txt-upgrade-speed" style="font-size:11px; color:#888; margin:4px 0;">Lvl 0</div>
-                            <button id="btn-upgrade-speed" onclick="buyUpgrade('speed')" style="padding:4px; font-size:11px; width:100%;">MEJORAR ($60)</button>
+                <!-- Lista Izquierda -->
+                <div class="panel" id="garage-car-list" style="gap:5px; flex: 0.9;"></div>
+                
+                <!-- Panel de Detalles Derecho (Estilo Fiel a la foto 1) -->
+                <div class="panel" style="flex: 1.1;">
+                    <h3 id="selected-car-title" style="margin: 0 0 15px 0; font-size: 24px; font-style: italic; text-align: left; border-bottom: 2px solid #ff0055; padding-bottom: 5px;">CAR NAME</h3>
+                    
+                    <!-- Barras de Especificaciones -->
+                    <div id="specs-container" style="margin-bottom: 20px;">
+                        <div class="stat-row"><span>SPEED</span><div class="stat-bar-bg" id="bar-speed"></div></div>
+                        <div class="stat-row"><span>ACCELERATION</span><div class="stat-bar-bg" id="bar-acc"></div></div>
+                        <div class="stat-row"><span>HANDLING</span><div class="stat-bar-bg" id="bar-handling"></div></div>
+                        <div class="stat-row"><span>NOS (NITRO)</span><div class="stat-bar-bg" id="bar-nitro"></div></div>
+                    </div>
+
+                    <!-- Mejoras de Motor y Nitro -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom: 15px;">
+                        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(0,255,204,0.2);">
+                            <div style="font-size:11px; color:#00ffcc; font-family:'Segoe UI';">STAGE MOTOR</div>
+                            <div id="txt-upgrade-speed" style="font-size:13px; margin:4px 0;">Lvl 0</div>
+                            <button id="btn-upgrade-speed" onclick="buyUpgrade('speed')" style="padding:5px; font-size:11px; width:100%;">UPGRADE ($60)</button>
                         </div>
-                        <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
-                            <div style="font-size:11px; color:#ff0055;">🔥 SISTEMA NITRO</div>
-                            <div id="txt-upgrade-nitro" style="font-size:11px; color:#888; margin:4px 0;">Lvl 0</div>
-                            <button id="btn-upgrade-nitro" onclick="buyUpgrade('nitro')" style="padding:4px; font-size:11px; width:100%;">MEJORAR ($50)</button>
+                        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,0,85,0.2);">
+                            <div style="font-size:11px; color:#ff0055; font-family:'Segoe UI';">SISTEMA NOS</div>
+                            <div id="txt-upgrade-nitro" style="font-size:13px; margin:4px 0;">Lvl 0</div>
+                            <button id="btn-upgrade-nitro" onclick="buyUpgrade('nitro')" style="padding:5px; font-size:11px; width:100%;">UPGRADE ($50)</button>
                         </div>
                     </div>
-                    <div style="margin-top:15px; display:flex; gap:10px; align-items:center; justify-content:center;">
-                        <label style="font-size:12px; color:#aaa;">🎨 Pintura Uretano:</label>
-                        <input type="color" id="picker-color" onchange="applyVisualChanges()" style="width:45px; height:28px; border:none; cursor:pointer; background:none;">
+
+                    <!-- Personalización e Interacción de Compra -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; font-family:'Segoe UI';">
+                        <div>
+                            <label style="font-size:12px; color:#aaa; display:block; margin-bottom:4px;">🎨 COLOR DE CARROCERÍA:</label>
+                            <input type="color" id="picker-color" onchange="applyVisualChanges()" style="width:60px; height:30px; border:none; cursor:pointer; background:none;">
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button id="btn-buy-car" onclick="purchaseCarClick()" style="display:none;">BUY CAR</button>
+                            <button id="btn-select-car" onclick="equipCarClick()" class="btn-select" style="display:none;">SELECT</button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <button onclick="changeScreen('menu-main')" style="background:#333; box-shadow:none; margin-top:10px;">VOLVER</button>
+            <button onclick="changeScreen('menu-main')" style="background:#222; box-shadow:none;">VOLVER AL MENU</button>
         </div>
 
-        <!-- HUD -->
+        <!-- HUD DE CARRERA -->
         <div id="hud" style="display:none;">
             <div class="hud-top">
-                <div id="hud-track-name" style="color:#00ffcc; text-transform:uppercase;">MADRID</div>
-                <div style="display:flex; gap:12px;">
-                    <div class="bar-container"><span style="font-size:10px; color:#ff00ff;">XP</span><div class="bar-outer"><div id="xp-fill" class="bar-fill-xp"></div></div></div>
-                    <div class="bar-container"><span style="font-size:10px; color:#00ffff;">NITRO</span><div class="bar-outer"><div id="nitro-fill" class="bar-fill-nitro"></div></div></div>
+                <div style="display:flex; align-items:center;">
+                    <span id="hud-pos" class="pos-indicator">1st</span>
+                    <span style="font-size:13px; color:#aaa; font-family:'Segoe UI';" id="hud-mode-tag">STAGE</span>
                 </div>
+                <div style="font-size: 24px; color: #00ffcc;" id="hud-speedometer">0 KM/H</div>
                 <div>💰 $<span id="hud-coins">0</span></div>
-            </div>
-            
-            <div style="position:absolute; top:52px; left:15px; font-size:12px; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
-                🏁 POS: <span id="hud-pos" style="color:#ffcc00; font-weight:bold;">1º</span> | RESTANTE: <span id="hud-distance">0</span>m
             </div>
 
             <div id="mobile-buttons" class="touch-controls">
-                <div style="display:flex; gap:15px;">
+                <div style="display:flex; gap:20px;">
                     <div class="touch-btn" id="btn-touch-left">◀</div>
                     <div class="touch-btn" id="btn-touch-right">▶</div>
                 </div>
-                <div style="display:flex; gap:15px;">
-                    <div class="touch-btn" id="btn-touch-nitro" style="color:#ffcc00; font-size:13px;">NITRO</div>
-                    <div class="touch-btn" id="btn-touch-jump" style="color:#00ffcc; font-size:13px;">SALTO</div>
+                <div style="display:flex; gap:20px;">
+                    <div class="touch-btn" id="btn-touch-nitro" style="color:#ff0055; font-weight:bold; font-size:14px;">NOS</div>
+                    <div class="touch-btn" id="btn-touch-jump" style="color:#00ffcc; font-weight:bold; font-size:14px;">FLIP</div>
                 </div>
             </div>
         </div>
 
-        <!-- PANTALLAS DE FIN DE JUEGO -->
-        <div id="screen-victory" class="overlay" style="display:none; background:rgba(2,15,5,0.98);">
-            <h1 id="victory-header">¡POSICIÓN DE PODIO!</h1>
-            <p id="victory-pos-text" style="font-size:20px; color:#00ffcc; font-weight:bold;"></p>
-            <p style="font-size:16px; color:#ffcc00; margin:4px 0;">💰 CRÉDITOS GANADOS: +$<span id="victory-reward">0</span></p>
-            <p style="font-size:15px; color:#ff00ff; margin:4px 0;">✨ ACROBACIAS Y META: +<span id="victory-xp">0</span> XP</p>
-            <button onclick="changeScreen('menu-main')">REGRESAR AL BOX</button>
+        <!-- FIN DE JUEGO -->
+        <div id="screen-victory" class="overlay" style="display:none;">
+            <h1 style="color:#ffcc00;">¡CRUZASTE LA META!</h1>
+            <p id="victory-pos-text" style="font-size:22px; font-style:italic; color:#fff;"></p>
+            <p style="font-size:16px; color:#aaa; font-family:'Segoe UI';">PREMIO: +$<span id="victory-reward">0</span> | RECOMPENSA: +<span id="victory-xp">0</span> XP</p>
+            <button onclick="changeScreen('menu-main')" class="btn-select">CONTINUAR</button>
         </div>
 
-        <div id="screen-defeat" class="overlay" style="display:none; background:rgba(20,2,5,0.98);">
-            <h1 style="color:#ff0055;">¡D.N.F. (VEHÍCULO DESTRUIDO)!</h1>
-            <p id="defeat-reason" style="color:#ccc; font-size:13px; margin-bottom:15px;"></p>
-            <button onclick="initGameSession()" style="background:linear-gradient(90deg, #cc0044, #ff0055);">REPARAR Y REINTENTAR 🔄</button>
+        <div id="screen-defeat" class="overlay" style="display:none; background:rgba(30,0,5,0.98);">
+            <h1 style="color:#ff0055;">VEHÍCULO DESTRUIDO</h1>
+            <p id="defeat-reason" style="font-family:'Segoe UI'; color:#ccc; margin-bottom:20px;"></p>
+            <button onclick="initGameSession()">REINTENTAR CARRERA 🔄</button>
         </div>
     </div>
 
 <script>
-    // --- MOTOR DE USUARIOS E HISTORIAL ---
+    // --- ESTADO GLOBAL Y PERSISTENCIA ---
     let playerData = { 
-        username: "", coins: 150, xp: 0, level: 1, selectedCar: 0, selectedTrack: 0,
+        username: "", coins: 20000, xp: 0, level: 1, selectedCar: 0, selectedTrack: 0,
         unlockedCars: [0], upgrades: {}, visuals: {}, wins: 0, losses: 0
     };
     let isVsMode = false, vsDifficultySetting = "medio";
 
     window.addEventListener('load', () => {
-        if(localStorage.getItem('nitro_flip_profile_v3')) {
-            playerData = JSON.parse(localStorage.getItem('nitro_flip_profile_v3'));
+        if(localStorage.getItem('nitro_flip_v4_play')) {
+            playerData = JSON.parse(localStorage.getItem('nitro_flip_v4_play'));
             changeScreen('menu-main');
         } else {
             changeScreen('screen-login');
@@ -180,209 +194,212 @@
 
     function registerUser() {
         const name = document.getElementById('username-input').value.trim();
-        if(!name) return alert("¡Introduce un nombre de piloto válido!");
+        if(!name) return;
         playerData.username = name;
-        saveGame();
-        changeScreen('menu-main');
+        saveGame(); changeScreen('menu-main');
     }
+    function saveGame() { localStorage.setItem('nitro_flip_v4_play', JSON.stringify(playerData)); }
 
-    function saveGame() { 
-        localStorage.setItem('nitro_flip_profile_v3', JSON.stringify(playerData)); 
-    }
-
-    // --- TIENDA: AUTOS ORDENADOS DE PEOR A MEJOR ---
+    // --- CATÁLOGO DE VEHÍCULOS ORDENADOS (FIEL A LA IMAGEN 1) ---
     const CAR_CATALOG = [
-        { name: "Patinete Eléctrico Base", price: 0, baseSpeed: 0.15, scale: {x:0.35, y:0.2, z:0.8}, isBike: true },
-        { name: "Renault Twizy E-Tech", price: 50, baseSpeed: 0.20, scale: {x:0.9, y:1.1, z:1.3} },
-        { name: "Fiat 500 Abarth Turbo", price: 120, baseSpeed: 0.26, scale: {x:1.1, y:1.0, z:1.6} },
-        { name: "Toyota Corolla GR Cup", price: 280, baseSpeed: 0.33, scale: {x:1.3, y:1.0, z:2.1} },
-        { name: "Ford Mustang V8 Spec", price: 550, baseSpeed: 0.42, scale: {x:1.4, y:1.0, z:2.4} },
-        { name: "Porsche 911 GT3 RS", price: 1100, baseSpeed: 0.54, scale: {x:1.4, y:0.9, z:2.3} },
-        { name: "Bugatti Chiron SuperSport", price: 2500, baseSpeed: 0.75, scale: {x:1.6, y:0.8, z:2.6} }
+        { name: "HUNTER GT (SPORT CLASS)", price: 0, baseSpeed: 0.25, specs: { speed: 4, acc: 3, handling: 4, nitro: 3 }, scale: {x:1.3, y:0.9, z:2.3} },
+        { name: "APEX INTERCEPTOR", price: 5000, baseSpeed: 0.35, specs: { speed: 6, acc: 5, handling: 5, nitro: 4 }, scale: {x:1.4, y:0.85, z:2.4} },
+        { name: "VENENO V12 NISMO", price: 12000, baseSpeed: 0.48, specs: { speed: 8, acc: 7, handling: 6, nitro: 6 }, scale: {x:1.5, y:0.8, z:2.5} },
+        { name: "CHIRON HYPERION", price: 30000, baseSpeed: 0.65, specs: { speed: 10, acc: 9, handling: 8, nitro: 9 }, scale: {x:1.6, y:0.75, z:2.7} }
     ];
 
-    // --- TIENDA: PISTAS BLOQUEADAS POR REQUISITO DE XP TOTAL ---
     const TRACK_CATALOG = [
-        { name: "Madrid Street", reqXp: 0, color: 0xcf9f5f, fog: 0x2b2218, desc: "Adoquines históricos y sol radiante.", specId: "madrid" },
-        { name: "Londres GP", reqXp: 300, color: 0x3a404a, fog: 0x1c1e22, desc: "Asfalto húmedo y niebla británica.", specId: "londres" },
-        { name: "New York Lights", reqXp: 800, color: 0x151821, fog: 0x08090f, desc: "Circuito urbano nocturno de alta velocidad.", specId: "ny" },
-        { name: "Río de Janeiro", reqXp: 1400, color: 0x224d28, fog: 0x0b170d, desc: "Curvas cerradas rodeadas de selva tropical.", specId: "rio" },
-        { name: "El Cairo Dunes", reqXp: 2200, color: 0xdfb873, fog: 0x47381e, desc: "Tormentas de arena y rampas piramidales.", specId: "cairo" },
-        { name: "Moscú Ice", reqXp: 3200, color: 0x4a3b4c, fog: 0x201521, desc: "Plazas imperiales y adoquines fríos.", specId: "moscu" },
-        { name: "Pekín Circuits", reqXp: 4400, color: 0x5c1a1a, fog: 0x1f0606, desc: "Faroles tradicionales encendidos.", specId: "pekin" },
-        { name: "Era de Hielo", reqXp: 5800, color: 0xaaccff, fog: 0x3d4f66, desc: "Suelo congelado resbaladizo y glaciares.", specId: "hielo" },
-        { name: "Era Futurista", reqXp: 7400, color: 0x001133, fog: 0x000511, desc: "Líneas de energía magmática y neón cian.", specId: "futuro" },
-        { name: "La Luna Dome", reqXp: 9500, color: 0x333333, fog: 0x020202, desc: "Gravedad reducida y saltos interestelares.", specId: "luna" }
+        { name: "DESIERTO DE MOJAVE", reqXp: 0, color: 0xdfb873, fog: 0x47381e, desc: "Cactus y dunas de alta velocidad (Imagen 2)" },
+        { name: "PUNTA NEVADA GP", reqXp: 400, color: 0xaaccff, fog: 0x3d4f66, desc: "Suelo helado y curvas resbaladizas (Imagen 4)" },
+        { name: "NEÓN TOKYO NIGHTS", reqXp: 1200, color: 0x111324, fog: 0x05060f, desc: "Asfalto mojado bajo carteles de luces de neón" }
     ];
 
-    // --- CONFIGURACIÓN GRÁFICA Y DE ILUMINACIÓN (THREE.JS) ---
+    // --- MOTOR GRÁFICO (THREE.JS) ---
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
-    dirLight.castShadow = true;
+    // Iluminación cinemática de estudio/garaje
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight.castShadow = true; dirLight.position.set(10, 30, 15);
     scene.add(dirLight);
 
-    // --- VARIABLES DE ESCENARIO Y SIMULACIÓN VS EN VIVO ---
-    let isPlaying = false, trackSegments = [], obstacles = [], opponents = [];
-    let vehicleGroup = null, wheelsArray = [], vehicleBBox = new THREE.Box3();
-    let speedX = 0, targetLaneZ = 0, posY = 0, velY = 0, rotX = 0;
-    let isJumping = false, currentNitro = 100, maxNitro = 100;
-    let distanceTraveled = 0, levelLength = 450, sessionXPEarned = 0;
+    let isPlaying = false, trackSegments = [], obstacles = [], opponents = [], nitroParticles = [];
+    let vehicleGroup = null, wheelsArray = [], targetLaneZ = 0, distanceTraveled = 0, posY = 0, velY = 0, rotX = 0, isJumping = false;
+    let speedX = 0, currentNitro = 100, maxNitro = 100, levelLength = 600, inspectedCarIdx = 0;
 
-    // --- DISEÑO DE AUTOS AVANZADO ---
-    function createAdvancedVehicle(index, showroom = false, isOpponent = false, oppColor = 0xff0000) {
+    // --- CONSTRUCTOR DE AUTOS AVANZADO CON NITRO (FUEGO AZUL) ---
+    function create3DVehicle(index, showroom = false, isOpponent = false, oppColor = 0x00ffcc) {
         if(vehicleGroup && showroom) scene.remove(vehicleGroup);
         if(!isOpponent) wheelsArray = [];
-        
-        const config = CAR_CATALOG[index];
+
+        const cfg = CAR_CATALOG[index];
         const group = new THREE.Group();
-        const customColor = isOpponent ? oppColor : (playerData.visuals[index + '_color'] || '#ff1100');
+        const colorHex = isOpponent ? oppColor : (playerData.visuals[index+'_color'] || '#ff1100');
 
-        const paintMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(customColor), metalness: 0.8, roughness: 0.08, clearcoat: 1.0 });
-        const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x050508, metalness: 0.9, transmission: 0.4, transparent: true });
-        const carbonMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.4 });
-        const rubberMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-        const chromeMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9 });
+        const bodyMat = new THREE.MeshPhysicalMaterial({ color: new THREE.Color(colorHex), metalness: 0.8, roughness: 0.1, clearcoat: 1.0 });
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0f, roughness: 0.1, metalness: 0.9 });
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 });
 
-        const base = new THREE.Mesh(new THREE.BoxGeometry(config.scale.z, config.scale.y * 0.45, config.scale.x), paintMat);
-        base.position.y = config.scale.y * 0.22 + 0.15;
-        base.castShadow = true; group.add(base);
+        // Chasis Central
+        const mainBody = new THREE.Mesh(new THREE.BoxGeometry(cfg.scale.z, cfg.scale.y * 0.5, cfg.scale.x), bodyMat);
+        mainBody.position.y = cfg.scale.y * 0.25 + 0.15; mainBody.castShadow = true; group.add(mainBody);
 
-        const hood = new THREE.Mesh(new THREE.BoxGeometry(config.scale.z * 0.35, config.scale.y * 0.3, config.scale.x * 0.96), paintMat);
-        hood.position.set(config.scale.z * 0.34, config.scale.y * 0.18 + 0.15, 0); hood.rotation.z = -0.14;
-        group.add(hood);
+        // Cabina Superior Cónica
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(cfg.scale.z * 0.45, cfg.scale.y * 0.4, cfg.scale.x * 0.85), glassMat);
+        cabin.position.set(-cfg.scale.z * 0.05, cfg.scale.y * 0.6, 0); group.add(cabin);
 
-        if(!config.isBike) {
-            const cab = new THREE.Mesh(new THREE.CylinderGeometry(config.scale.x * 0.35, config.scale.x * 0.45, config.scale.y * 0.45, 4), glassMat);
-            cab.rotateY(Math.PI/4); cab.position.set(-config.scale.z * 0.05, config.scale.y * 0.6 + 0.15, 0);
-            cab.scale.set(config.scale.z * 0.45, 1, 1); group.add(cab);
-        }
+        // Alerón de competición trasero (Imagen 4)
+        const spoilerStrut = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, cfg.scale.x * 0.7), wheelMat);
+        spoilerStrut.position.set(-cfg.scale.z * 0.45, cfg.scale.y * 0.6, 0);
+        const spoilerWing = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, cfg.scale.x * 1.1), bodyMat);
+        spoilerWing.position.set(-cfg.scale.z * 0.45, cfg.scale.y * 0.8, 0);
+        group.add(spoilerStrut, spoilerWing);
 
-        const wRadius = 0.25;
-        const wPositions = config.isBike ? [{x:-config.scale.z*0.38, z:0}, {x:config.scale.z*0.38, z:0}] :
-            [{x:-config.scale.z*0.3, z:config.scale.x*0.48}, {x:-config.scale.z*0.3, z:-config.scale.x*0.48}, {x:config.scale.z*0.3, z:config.scale.x*0.48}, {x:config.scale.z*0.3, z:-config.scale.x*0.48}];
-
-        wPositions.forEach(p => {
-            const wh = new THREE.Group(); wh.position.set(p.x, wRadius, p.z);
-            const tire = new THREE.Mesh(new THREE.CylinderGeometry(wRadius, wRadius, 0.20, 12), rubberMat);
-            tire.rotateX(Math.PI/2);
-            const rim = new THREE.Mesh(new THREE.CylinderGeometry(wRadius*0.6, wRadius*0.6, 0.21, 10), chromeMat);
-            rim.rotateX(Math.PI/2); wh.add(tire, rim); group.add(wh);
-            if(!isOpponent) wheelsArray.push(wh);
+        // Ruedas 3D
+        const wRadius = 0.28;
+        const wOffsets = [
+            {x: -cfg.scale.z*0.28, z: cfg.scale.x*0.48}, {x: -cfg.scale.z*0.28, z: -cfg.scale.x*0.48},
+            {x: cfg.scale.z*0.3, z: cfg.scale.x*0.48}, {x: cfg.scale.z*0.3, z: -cfg.scale.x*0.48}
+        ];
+        wOffsets.forEach(pos => {
+            const wMesh = new THREE.Mesh(new THREE.CylinderGeometry(wRadius, wRadius, 0.25, 16), wheelMat);
+            wMesh.rotateX(Math.PI/2); wMesh.position.set(pos.x, wRadius, pos.z); wMesh.castShadow = true;
+            group.add(wMesh); if(!isOpponent) wheelsArray.push(wMesh);
         });
 
-        if(showroom) { group.position.set(0,0,0); scene.add(group); vehicleGroup = group; }
+        // Luces Traseras / Tubos de Escape Emisivos para el Nitro Fuego Azul (Imagen 4)
+        if(!showroom) {
+            const exhaustGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.2, 8);
+            const exhaustMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+            const exLeft = new THREE.Mesh(exhaustGeo, exhaustMat); exLeft.rotateZ(Math.PI/2);
+            exLeft.position.set(-cfg.scale.z*0.52, cfg.scale.y*0.2, -0.3);
+            const exRight = exLeft.clone(); exRight.position.z = 0.3;
+            group.add(exLeft, exRight);
+        }
+
+        if(showroom) { group.position.set(0, 0, 0); scene.add(group); vehicleGroup = group; }
         return group;
     }
 
-    // --- CONSTRUCCIÓN REALISTA DE ESCENARIOS ---
-    function buildTrackBlock(xPos, type = "normal") {
-        const trackData = TRACK_CATALOG[playerData.selectedTrack];
-        const seg = new THREE.Group(); seg.position.x = xPos;
-        seg.userData = { type: type, rotAngle: 0 };
-
-        const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.4, 7.5), new THREE.MeshStandardMaterial({ color: trackData.color, roughness: 0.6 }));
-        floor.position.set(5, -0.2, 0); floor.receiveShadow = true; seg.add(floor);
-
-        const border = new THREE.Mesh(new THREE.BoxGeometry(10, 0.2, 0.15), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-        border.position.set(5, 0.1, 3.75); const border2 = border.clone(); border2.position.z = -3.75;
-        seg.add(border, border2);
-
-        if(type === "rampa_giratoria") {
-            const rGroup = new THREE.Group(); rGroup.position.set(5, 0, 0);
-            const rMesh = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.4, 4), new THREE.MeshStandardMaterial({color: 0xff0055, metalness:0.6}));
-            rMesh.position.set(0, 0.7, 0); rMesh.rotation.z = 0.22; rMesh.castShadow = true;
-            rGroup.add(rMesh); seg.add(rGroup); seg.userData.rampMesh = rGroup;
-        } else if(type === "rampa_fija") {
-            const rf = new THREE.Mesh(new THREE.BoxGeometry(5, 0.4, 7.3), new THREE.MeshStandardMaterial({color: 0x00ffcc}));
-            rf.position.set(5, 0.5, 0); rf.rotation.z = 0.22; seg.add(rf);
-        }
-
-        scene.add(seg); trackSegments.push(seg);
-    }
-
-    // --- CONTROL DE NAVEGACIÓN Y MENÚS ---
-    function changeScreen(targetId) {
-        ['screen-login', 'menu-main', 'menu-tracks', 'menu-garage', 'hud', 'screen-victory', 'screen-defeat'].forEach(id => document.getElementById(id).style.display = 'none');
-        document.getElementById(targetId).style.display = 'flex';
-        document.getElementById('mobile-buttons').style.display = (targetId === 'hud') ? 'flex' : 'none';
+    // --- INTERFAZ DEL JUEGO Y FLUJOS ---
+    function changeScreen(id) {
+        ['screen-login', 'menu-main', 'menu-tracks', 'menu-garage', 'hud', 'screen-victory', 'screen-defeat'].forEach(s => document.getElementById(s).style.display = 'none');
+        document.getElementById(id).style.display = 'flex';
+        document.getElementById('mobile-buttons').style.display = (id === 'hud') ? 'flex' : 'none';
         
-        if(targetId === 'menu-main') {
+        if(id === 'menu-main') {
             if(vehicleGroup) scene.remove(vehicleGroup);
-            opponents.forEach(o => scene.remove(o.mesh)); opponents = [];
-            playerData.level = Math.floor(playerData.xp / 500) + 1;
-            document.getElementById('welcome-title').innerText = `PADDOCK DE ${playerData.username.toUpperCase()}`;
-            document.getElementById('main-user').innerText = playerData.username;
-            document.getElementById('main-lvl').innerText = playerData.level;
-            document.getElementById('main-xp').innerText = playerData.xp;
-            document.getElementById('main-stats').innerText = `W: ${playerData.wins || 0} / L: ${playerData.losses || 0}`;
+            playerData.level = Math.floor(playerData.xp / 600) + 1;
+            document.getElementById('player-tag').innerText = `PILOTO: ${playerData.username} | LVL ${playerData.level} | XP TOTAL: ${playerData.xp}`;
             saveGame();
         }
     }
 
-    function openTracks(vsModeActivated) {
-        isVsMode = vsModeActivated;
-        document.getElementById('tracks-header-title').innerText = isVsMode ? "MODO VS: FÓRMULA ARCADE" : "MODO CONTRARRELOJ";
+    function openTracks(vsMode) {
+        isVsMode = vsMode;
         document.getElementById('vs-difficulty-box').style.display = isVsMode ? 'block' : 'none';
         changeScreen('menu-tracks');
         
-        const container = document.getElementById('tracks-list'); container.innerHTML = '';
+        const list = document.getElementById('tracks-list'); list.innerHTML = '';
         TRACK_CATALOG.forEach((track, index) => {
-            const isUnlocked = playerData.xp >= track.reqXp;
+            const unlocked = playerData.xp >= track.reqXp;
             const btn = document.createElement('button');
             btn.className = `selector-btn ${playerData.selectedTrack === index ? 'active' : ''}`;
-            btn.disabled = !isUnlocked;
-            btn.innerHTML = `<span>${track.name} ${isUnlocked ? '' : '🔒 (Req: '+track.reqXp+' XP)'}</span><span style="font-size:11px; color:#aaa;">${track.desc}</span>`;
-            btn.onclick = () => { 
-                playerData.selectedTrack = index; 
+            btn.disabled = !unlocked;
+            btn.innerHTML = `<span>${track.name} ${unlocked ? '' : '🔒 ('+track.reqXp+' XP)'}</span> <span style="font-size:11px; color:#00ffcc;">${track.desc}</span>`;
+            btn.onclick = () => {
+                playerData.selectedTrack = index;
                 if(isVsMode) vsDifficultySetting = document.getElementById('vs-difficulty').value;
-                saveGame(); openTracks(isVsMode); initGameSession(); 
+                saveGame(); initGameSession();
             };
-            container.appendChild(btn);
+            list.appendChild(btn);
         });
     }
 
-    function openGarage() { changeScreen('menu-garage'); document.getElementById('garage-coins').innerText = playerData.coins; renderGarageList(); selectGarageCar(playerData.selectedCar); }
+    function openGarage() {
+        changeScreen('menu-garage');
+        document.getElementById('garage-coins').innerText = playerData.coins.toLocaleString();
+        renderGarageCars();
+        selectGarageCar(playerData.selectedCar);
+    }
 
-    function renderGarageList() {
-        const container = document.getElementById('garage-car-list'); container.innerHTML = '';
+    function renderGarageCars() {
+        const list = document.getElementById('garage-car-list'); list.innerHTML = '';
         CAR_CATALOG.forEach((car, index) => {
-            const bought = playerData.unlockedCars.includes(index);
+            const owned = playerData.unlockedCars.includes(index);
             const btn = document.createElement('button');
-            btn.className = `selector-btn ${playerData.selectedCar === index ? 'active' : ''}`;
-            btn.innerHTML = `<span>${car.name}</span> <span>${bought ? 'EQUIPADO' : '$' + car.price}</span>`;
-            btn.onclick = () => {
-                if(bought) { playerData.selectedCar = index; saveGame(); renderGarageList(); selectGarageCar(index); }
-                else if(playerData.coins >= car.price) { playerData.coins -= car.price; playerData.unlockedCars.push(index); playerData.selectedCar = index; saveGame(); renderGarageList(); selectGarageCar(index); document.getElementById('garage-coins').innerText = playerData.coins; }
-            };
-            container.appendChild(btn);
+            btn.className = `selector-btn ${inspectedCarIdx === index ? 'active' : ''}`;
+            btn.innerHTML = `<span>${car.name.split(' ')[0]}</span> <span style="color:#ffcc00;">${owned ? 'PROPIO' : '$'+car.price}</span>`;
+            btn.onclick = () => selectGarageCar(index);
+            list.appendChild(btn);
         });
     }
 
     function selectGarageCar(idx) {
-        document.getElementById('selected-car-title').innerText = CAR_CATALOG[idx].name;
+        inspectedCarIdx = idx;
+        renderGarageCars();
+        const car = CAR_CATALOG[idx];
+        document.getElementById('selected-car-title').innerText = car.name;
+        
+        // Renderizar Barras Estilo Imagen 1 (Máximo 10 bloques)
+        renderStatBar('bar-speed', car.specs.speed, 'fill-speed');
+        renderStatBar('bar-acc', car.specs.acc, 'fill-acc');
+        renderStatBar('bar-handling', car.specs.handling, 'fill-handling');
+        renderStatBar('bar-nitro', car.specs.nitro, 'fill-nitro');
+
         document.getElementById('txt-upgrade-speed').innerText = `Motor Stage: Lvl ${playerData.upgrades[idx+'_speed'] || 0}`;
-        document.getElementById('txt-upgrade-nitro').innerText = `Presión Nitro: Lvl ${playerData.upgrades[idx+'_nitro'] || 0}`;
+        document.getElementById('txt-upgrade-nitro').innerText = `Sistema NOS: Lvl ${playerData.upgrades[idx+'_nitro'] || 0}`;
         document.getElementById('picker-color').value = playerData.visuals[idx+'_color'] || '#ff1100';
-        createAdvancedVehicle(idx, true);
+
+        const owned = playerData.unlockedCars.includes(idx);
+        document.getElementById('btn-buy-car').style.display = !owned ? 'block' : 'none';
+        document.getElementById('btn-buy-car').disabled = playerData.coins < car.price;
+        document.getElementById('btn-buy-car').innerText = `BUY UNLOCK ($${car.price})`;
+        document.getElementById('btn-select-car').style.display = owned ? 'block' : 'none';
+        document.getElementById('btn-select-car').className = (playerData.selectedCar === idx) ? 'btn-select' : '';
+        document.getElementById('btn-select-car').innerText = (playerData.selectedCar === idx) ? 'EQUIPPED' : 'SELECT';
+
+        create3DVehicle(idx, true);
     }
 
+    function renderStatBar(elementId, value, cssClass) {
+        const bar = document.getElementById(elementId); bar.innerHTML = '';
+        for(let i=1; i<=10; i++) {
+            const chunk = document.createElement('div');
+            chunk.className = `stat-chunk ${i <= value ? cssClass : ''}`;
+            bar.appendChild(chunk);
+        }
+    }
+
+    function purchaseCarClick() {
+        const car = CAR_CATALOG[inspectedCarIdx];
+        if(playerData.coins >= car.price) {
+            playerData.coins -= car.price; playerData.unlockedCars.push(inspectedCarIdx);
+            playerData.selectedCar = inspectedCarIdx; saveGame(); openGarage();
+        }
+    }
+    function equipCarClick() { playerData.selectedCar = inspectedCarIdx; saveGame(); openGarage(); }
     function buyUpgrade(type) {
-        const idx = playerData.selectedCar, lvl = playerData.upgrades[idx+'_'+type] || 0, cost = type === 'speed' ? 60 : 50;
-        if(playerData.coins >= cost) { playerData.coins -= cost; playerData.upgrades[idx+'_'+type] = lvl + 1; saveGame(); openGarage(); }
+        const idx = inspectedCarIdx, currentLvl = playerData.upgrades[idx+'_'+type] || 0, cost = type === 'speed' ? 60 : 50;
+        if(playerData.coins >= cost) { playerData.coins -= cost; playerData.upgrades[idx+'_'+type] = currentLvl + 1; saveGame(); selectGarageCar(idx); document.getElementById('garage-coins').innerText = playerData.coins; }
+    }
+    function applyVisualChanges() { playerData.visuals[inspectedCarIdx+'_color'] = document.getElementById('picker-color').value; saveGame(); create3DVehicle(inspectedCarIdx, true); }
+
+    // --- ESCENARIOS & DINÁMICA DE CARRERA ---
+    function buildBlock(xPos) {
+        const trackData = TRACK_CATALOG[playerData.selectedTrack];
+        const block = new THREE.Group(); block.position.x = xPos;
+        const mainRoad = new THREE.Mesh(new THREE.BoxGeometry(10, 0.4, 7.5), new THREE.MeshStandardMaterial({ color: trackData.color, roughness: 0.7 }));
+        mainRoad.position.set(5, -0.2, 0); mainRoad.receiveShadow = true; block.add(mainRoad);
+        scene.add(block); trackSegments.push(block);
     }
 
-    function applyVisualChanges() { playerData.visuals[playerData.selectedCar+'_color'] = document.getElementById('picker-color').value; saveGame(); selectGarageCar(playerData.selectedCar); }
-
-    // --- BUCLE SIMULADOR MOTOR DE CARRERAS CON IA ---
     function initGameSession() {
         if(vehicleGroup) scene.remove(vehicleGroup);
         trackSegments.forEach(s => scene.remove(s)); obstacles.forEach(o => scene.remove(o));
@@ -390,175 +407,104 @@
         trackSegments = []; obstacles = []; opponents = [];
 
         const trackData = TRACK_CATALOG[playerData.selectedTrack];
-        document.getElementById('hud-track-name').innerText = trackData.name + (isVsMode ? " [VS MODE]" : "");
+        document.getElementById('hud-mode-tag').innerText = isVsMode ? "MODO VS ARCADE" : "CONTRARRELOJ STAGE";
         document.getElementById('hud-coins').innerText = playerData.coins;
         changeScreen('hud');
 
         scene.background = new THREE.Color(trackData.fog);
-        scene.fog = new THREE.FogExp2(trackData.fog, trackData.specId === "luna" ? 0.002 : 0.016);
-        dirLight.color.setHex(trackData.specId === "futuro" ? 0x00ffff : 0xffffff);
+        scene.fog = new THREE.FogExp2(trackData.fog, 0.018);
 
-        levelLength = 500; distanceTraveled = 0; sessionXPEarned = 0;
+        levelLength = 650; distanceTraveled = 0; posY = 0; velY = 0; isJumping = false; targetLaneZ = 0;
         const cIdx = playerData.selectedCar;
-        speedX = CAR_CATALOG[cIdx].baseSpeed * (1 + (playerData.upgrades[cIdx+'_speed'] || 0)*0.06);
-        maxNitro = 100 + (playerData.upgrades[cIdx+'_nitro'] || 0)*15; currentNitro = maxNitro;
+        speedX = CAR_CATALOG[cIdx].baseSpeed * (1 + (playerData.upgrades[cIdx+'_speed'] || 0)*0.07);
 
-        for(let i = 0; i < 120; i += 10) buildTrackBlock(i, "normal");
-        for(let x = 120; x < levelLength - 40; x += 10) {
-            let rand = Math.random();
-            if(rand > 0.86) buildTrackBlock(x, "rampa_giratoria");
-            else if(rand > 0.74) buildTrackBlock(x, "rampa_fija");
-            else buildTrackBlock(x, "normal");
+        for(let i=0; i<150; i+=10) buildBlock(i);
 
-            if(rand < 0.24) {
-                const obs = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({color: 0xff8800}));
-                obs.position.set(x + Math.random()*4, 0.6, (Math.floor(Math.random()*3)-1)*2.2);
-                scene.add(obs); obstacles.push(obs);
-            }
-        }
-        for(let i = levelLength - 40; i <= levelLength + 20; i += 10) buildTrackBlock(i, "normal");
+        vehicleGroup = create3DVehicle(cIdx, false); scene.add(vehicleGroup);
+        isPlaying = true;
 
-        vehicleGroup = createAdvancedVehicle(cIdx, false); scene.add(vehicleGroup);
-        posY = 0; velY = 0; rotX = 0; isJumping = false; targetLaneZ = 0; isPlaying = true;
-
-        // INYECTAR SIMULADORES IA SI ES MODO VS
         if(isVsMode) {
-            let baseIaSpeed = speedX * (vsDifficultySetting === "facil" ? 0.85 : (vsDifficultySetting === "medio" ? 0.98 : 1.12));
-            let oppColors = [0x0022ff, 0x00ff55, 0xffcc00];
+            let iaSpeedFactor = vsDifficultySetting === "facil" ? 0.88 : (vsDifficultySetting === "medio" ? 0.98 : 1.10);
+            let colors = [0x00ff55, 0xffaa00, 0xff00ff];
             let lanes = [-2.2, 0, 2.2];
-            for(let k = 0; k < 3; k++) {
-                let oppMesh = createAdvancedVehicle(Math.max(0, cIdx - 1), false, true, oppColors[k]);
-                oppMesh.position.set(0, 0, lanes[k]);
-                scene.add(oppMesh);
-                opponents.push({ mesh: oppMesh, speed: baseIaSpeed * (1 + Math.random()*0.05), dist: Math.random()*5, laneZ: lanes[k] });
+            for(let k=0; k<3; k++) {
+                let opp = create3DVehicle(Math.max(0, cIdx - 1), false, true, colors[k]);
+                opp.position.set(Math.random()*15, 0, lanes[k]); scene.add(opp);
+                opponents.push({ mesh: opp, speed: speedX * iaSpeedFactor * (1 + Math.random()*0.04), dist: opp.position.x, laneZ: lanes[k] });
             }
         }
-
-        animateLoop();
+        animateGame();
     }
 
-    function animateLoop() {
-        if(!isPlaying) return; requestAnimationFrame(animateLoop);
+    function animateGame() {
+        if(!isPlaying) return; requestAnimationFrame(animateGame);
 
         distanceTraveled += speedX; vehicleGroup.position.x = distanceTraveled;
-        vehicleGroup.position.z += (targetLaneZ - vehicleGroup.position.z) * 0.16;
-        vehicleGroup.rotation.y = (targetLaneZ - vehicleGroup.position.z) * -0.1;
+        vehicleGroup.position.z += (targetLaneZ - vehicleGroup.position.z) * 0.15;
+        
+        // Rotación de ruedas al avanzar
+        wheelsArray.forEach(w => w.rotation.z -= speedX * 1.6);
 
-        wheelsArray.forEach(w => { w.rotation.z -= speedX * 1.5; });
+        // Actualizar velocímetro realista en pantalla (Km/h)
+        document.getElementById('hud-speedometer').innerText = `${Math.floor(speedX * 520)} KM/H`;
 
-        let currentBlockType = "normal";
-        trackSegments.forEach(seg => {
-            if(distanceTraveled >= seg.position.x && distanceTraveled <= seg.position.x + 10) currentBlockType = seg.userData.type;
-            if(seg.userData.type === "rampa_giratoria" && seg.userData.rampMesh) seg.userData.rampMesh.rotation.x += 0.02;
-        });
-
-        if(currentBlockType === "rampa_fija" && !isJumping) posY = 0.5;
-
-        if(isJumping) {
-            let gravity = TRACK_CATALOG[playerData.selectedTrack].specId === "luna" ? 0.005 : 0.016;
-            velY -= gravity; posY += velY; 
-            if(currentBlockType === "rampa_giratoria" || Math.abs(rotX) > 0) { rotX += 0.15; vehicleGroup.rotation.x = rotX; }
-            if(posY <= 0) {
-                posY = 0; velY = 0; vehicleGroup.rotation.x = 0; isJumping = false;
-                if(rotX > 0) { let xpGained = Math.floor(rotX * 40); sessionXPEarned += xpGained; triggerXPVisualPopup(xpGained); }
-                rotX = 0;
-            }
-        } else {
-            if(currentBlockType === "normal") posY += (0 - posY) * 0.2;
-        }
-        vehicleGroup.position.y = posY;
-
-        // PROCESAR MOVIMIENTO DE LA INTELIGENCIA ARTIFICIAL
+        // Lógica de IA y cálculo de la posición del líder (Imagen 3 y 4)
         let playerPos = 1;
         opponents.forEach(opp => {
-            opp.dist += opp.speed;
-            opp.mesh.position.x = opp.dist;
-            // Esquive simple de IA para simular realismo
-            if(Math.random() > 0.98) opp.laneZ = (Math.floor(Math.random()*3)-1)*2.2;
+            opp.dist += opp.speed; opp.mesh.position.x = opp.dist;
+            if(Math.random() > 0.985) opp.laneZ = (Math.floor(Math.random()*3)-1)*2.2;
             opp.mesh.position.z += (opp.laneZ - opp.mesh.position.z) * 0.08;
             if(opp.dist > distanceTraveled) playerPos++;
         });
 
-        document.getElementById('hud-pos').innerText = isVsMode ? `${playerPos}º / 4º` : "1º (Solo)";
+        const suffixes = ["st", "nd", "rd", "th"];
+        document.getElementById('hud-pos').innerText = isVsMode ? `${playerPos}${suffixes[playerPos-1]}` : "1st";
 
-        // COLISIONES ANTI-BUGS
-        vehicleBBox.setFromObject(vehicleGroup);
-        if(Math.abs(vehicleGroup.position.z) > 4.0 && posY <= 0.05) { endGameSession(false, "Despiste crítico fuera del circuito."); return; }
-        for(let i = 0; i < obstacles.length; i++) {
-            if(vehicleBBox.intersectsBox(new THREE.Box3().setFromObject(obstacles[i]))) { endGameSession(false, "Impacto crítico contra los restos del circuito."); return; }
+        // Generar dinámicamente más pista adelante
+        if(trackSegments.length < 30) {
+            let nextX = trackSegments[trackSegments.length-1].position.x + 10;
+            if(nextX < levelLength + 50) buildBlock(nextX);
+        }
+        if(trackSegments.length > 0 && distanceTraveled > trackSegments[0].position.x + 40) {
+            scene.remove(trackSegments.shift());
         }
 
-        if(trackSegments.length > 0 && distanceTraveled > trackSegments[0].position.x + 35) scene.remove(trackSegments.shift());
+        // Condición de final de carrera
+        if(distanceTraveled >= levelLength) {
+            isPlaying = false;
+            let rewardCoins = isVsMode ? (playerPos === 1 ? 400 : (playerPos === 2 ? 150 : 50)) : 100;
+            playerData.coins += rewardCoins; playerData.xp += 150; saveGame();
+            document.getElementById('victory-pos-text').innerText = isVsMode ? `¡TERMINASTE EN LA POSICIÓN EN VIVO: ${playerPos}º!` : "¡CONTRARRELOJ COMPLETADO!";
+            document.getElementById('victory-reward').innerText = rewardCoins;
+            document.getElementById('victory-xp').innerText = 150;
+            changeScreen('screen-victory');
+            return;
+        }
 
-        let rem = Math.max(0, Math.floor(levelLength - distanceTraveled));
-        document.getElementById('hud-distance').innerText = rem;
-        document.getElementById('nitro-fill').style.width = `${(currentNitro / maxNitro) * 100}%`;
-        document.getElementById('xp-fill').style.width = `${(playerData.xp % 500) / 500 * 100}%`;
+        // Cámara de persecución pegada al asfalto (Imagen 2 y 4)
+        camera.position.set(vehicleGroup.position.x - 5.5, vehicleGroup.position.y + 2.3, vehicleGroup.position.z * 0.4);
+        camera.lookAt(vehicleGroup.position.x + 5, vehicleGroup.position.y * 0.6, vehicleGroup.position.z * 0.15);
+        dirLight.position.set(vehicleGroup.position.x + 10, 25, 10);
 
-        if(rem <= 0) { endGameSession(true, "", playerPos); return; }
-
-        camera.position.set(vehicleGroup.position.x - 6.8, vehicleGroup.position.y + 3.0, vehicleGroup.position.z * 0.45);
-        camera.lookAt(vehicleGroup.position.x + 4.5, vehicleGroup.position.y * 0.5, vehicleGroup.position.z * 0.2);
-        dirLight.position.set(vehicleGroup.position.x + 15, 40, 10);
         renderer.render(scene, camera);
     }
 
-    function triggerXPVisualPopup(amount) {
-        const p = document.getElementById('xp-popup'); p.innerText = `+${amount} XP STUNT!`;
-        p.style.display = 'block'; setTimeout(() => { p.style.display = 'none'; }, 600);
-    }
-
-    function endGameSession(win, reason = "", finalPos = 1) {
-        isPlaying = false;
-        if(win) {
-            let baseCoins = 50 + playerData.selectedTrack * 15;
-            let finalPrize = isVsMode ? (finalPos === 1 ? baseCoins * 2 : (finalPos === 2 ? baseCoins * 1.5 : baseCoins * 0.5)) : baseCoins;
-            finalPrize = Math.floor(finalPrize);
-            
-            playerData.coins += finalPrize;
-            let totalXPEarned = sessionXPEarned + (isVsMode && finalPos === 1 ? 200 : 100);
-            playerData.xp += totalXPEarned;
-
-            if(isVsMode) {
-                if(finalPos === 1) playerData.wins = (playerData.wins || 0) + 1;
-                else playerData.losses = (playerData.losses || 0) + 1;
-            } else {
-                playerData.wins = (playerData.wins || 0) + 1;
-            }
-
-            document.getElementById('victory-header').innerText = (isVsMode && finalPos === 1) ? "🏆 ¡VICTORIA EN GP!" : "🏁 META COMPLETADA";
-            document.getElementById('victory-pos-text').innerText = isVsMode ? `Terminaste en posición: ${finalPos}º` : "Modo Contrarreloj superado.";
-            document.getElementById('victory-reward').innerText = finalPrize;
-            document.getElementById('victory-xp').innerText = totalXPEarned;
-            
-            changeScreen('menu-main'); changeScreen('screen-victory');
-        } else {
-            if(isVsMode) playerData.losses = (playerData.losses || 0) + 1;
-            document.getElementById('defeat-reason').innerText = reason;
-            changeScreen('screen-defeat');
-        }
-    }
-
-    // --- ACCIONES DE ENLACE FIABLES ---
-    function actionLeft() { targetLaneZ = Math.max(-2.2, targetLaneZ - 2.2); }
-    function actionRight() { targetLaneZ = Math.min(-2.2 + 4.4, targetLaneZ + 2.2); }
-    function actionJump() { if(!isJumping) { isJumping = true; velY = 0.35; } }
-    function actionNitro() { if(currentNitro > 15) { currentNitro -= 20; distanceTraveled += 7.5; } }
+    // --- ACCIONES RECEPTORAS ---
+    function laneLeft() { targetLaneZ = Math.max(-2.2, targetLaneZ - 2.2); }
+    function laneRight() { targetLaneZ = Math.min(2.2, targetLaneZ + 2.2); }
+    function activateNitro() { distanceTraveled += 6.0; } // Ráfaga súbita hacia adelante
 
     window.addEventListener('keydown', (e) => {
         if(!isPlaying) return;
-        if(e.key === 'a' || e.key === 'ArrowLeft') actionLeft();
-        if(e.key === 'd' || e.key === 'ArrowRight') actionRight();
-        if(e.key === ' ') actionJump();
-        if(e.key === 'Shift') actionNitro();
+        if(e.key === 'a' || e.key === 'ArrowLeft') laneLeft();
+        if(e.key === 'd' || e.key === 'ArrowRight') laneRight();
+        if(e.key === 'Shift') activateNitro();
     });
 
-    document.getElementById('btn-touch-left').addEventListener('touchstart', (e) => { e.preventDefault(); actionLeft(); });
-    document.getElementById('btn-touch-right').addEventListener('touchstart', (e) => { e.preventDefault(); actionRight(); });
-    document.getElementById('btn-touch-jump').addEventListener('touchstart', (e) => { e.preventDefault(); actionJump(); });
-    document.getElementById('btn-touch-nitro').addEventListener('touchstart', (e) => { e.preventDefault(); actionNitro(); });
-
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    document.getElementById('btn-touch-left').addEventListener('touchstart', (e) => { e.preventDefault(); laneLeft(); });
+    document.getElementById('btn-touch-right').addEventListener('touchstart', (e) => { e.preventDefault(); laneRight(); });
+    document.getElementById('btn-touch-nitro').addEventListener('touchstart', (e) => { e.preventDefault(); activateNitro(); });
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 </script>
 </body>
 </html>
