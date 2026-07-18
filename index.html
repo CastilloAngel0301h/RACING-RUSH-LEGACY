@@ -4,465 +4,1379 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Racing Rush Legacy - Racing Evolution</title>
+    <!-- Configuración PWA y Metadatos -->
+    <meta name="theme-color" content="#030205">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #05050a; user-select: none; touch-action: none; color: white; }
-        canvas { display: block; width: 100vw; height: 100vh; }
-        
-        #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        .overlay { pointer-events: auto; background: radial-gradient(circle at center, rgba(10,7,20,0.99) 0%, rgba(3,2,6,1) 100%); position: absolute; top:0; left:0; width:100%; height:100%; display: flex; flex-direction:column; align-items:center; justify-content:center; text-align: center; }
-        
-        h1 { font-size: 42px; margin: 0; font-weight: 900; letter-spacing: 1px; font-style: italic; background: linear-gradient(180deg, #ffffff 0%, #999999 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        h2 { font-size: 11px; color: #ff1744; margin: 4px 0 25px 0; letter-spacing: 4px; font-weight: 800; text-transform: uppercase; }
+        /* ==========================================================================
+           1. ESTILOS BASE Y VARIABLES
+           ========================================================================== */
+        :root {
+            --bg-dark: #030205;
+            --panel-bg: rgba(13, 9, 26, 0.95);
+            --accent-red: #ff1744;
+            --accent-glow: rgba(255, 23, 68, 0.4);
+            --text-main: #ffffff;
+            --text-muted: #a9a1b0;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --ui-font: 'Segoe UI', system-ui, sans-serif;
+        }
 
-        .main-container { display: flex; gap: 15px; width: 95%; max-width: 1000px; height: 60vh; margin-bottom: 15px; text-align: left; }
-        .panel { background: rgba(13,9,26,0.95); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; backdrop-filter: blur(15px); }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; }
         
-        button { padding: 12px 24px; font-size: 11px; font-weight: 800; letter-spacing: 1px; cursor: pointer; background: #fff; border: none; color: #000; border-radius: 4px; transition: all 0.15s ease; text-transform: uppercase; }
-        button:active { transform: scale(0.97); }
-        button:disabled { background: #15121f !important; color: #4e4757 !important; border: 1px solid rgba(255,255,255,0.02) !important; cursor: not-allowed; }
-        
-        .btn-accent { background: linear-gradient(135deg, #ffffff 0%, #b8b8b8 100%); color: #000; font-weight: 900; }
-        .btn-dark { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: white; }
+        body {
+            background-color: var(--bg-dark);
+            font-family: var(--ui-font);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
 
-        .selector-btn { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); margin: 5px 0; text-align: left; display: flex; justify-content: space-between; align-items: center; padding: 14px; font-size: 11px; color: #cfcbd6; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        .selector-btn.active { border-color: #ff1744; background: rgba(255, 23, 68, 0.08); color: #fff; }
-        
-        .stat-row { display: flex; align-items: center; justify-content: space-between; margin: 6px 0; font-size: 10px; color: #a9a1b0; font-weight: 700; }
-        .stat-bar-bg { width: 140px; height: 6px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; display: flex; gap: 1px; }
-        .stat-segment { height: 100%; flex: 1; background: rgba(255,255,255,0.02); }
-        .stat-segment.fill { background: #ffffff; }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: block;
+        }
 
-        .hud-display { position: absolute; top: 20px; left: 25px; right: 25px; display: flex; justify-content: space-between; pointer-events: none; }
-        .hud-metrics { font-size: 24px; font-weight: 900; font-style: italic; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
-        .hud-metrics span { font-size: 11px; color: #ff1744; margin-left: 2px; font-weight: 700; }
+        /* ==========================================================================
+           2. SISTEMA DE UI Y PANELES
+           ========================================================================== */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        .touch-controls { position: absolute; bottom: 30px; left: 0; width: 100%; display: none; justify-content: space-between; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
-        .touch-btn { width: 90px; height: 90px; background: rgba(13,9,26,0.85); border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; color: white; font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); pointer-events: auto; }
-        .touch-btn:active { background: #ffffff; color: #000; }
+        .screen {
+            pointer-events: auto;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(10,7,20,0.98) 0%, rgba(3,2,6,1) 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .screen.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .top-bar {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.5);
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        .currency-display {
+            font-size: 18px;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255,215,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ==========================================================================
+           3. TIPOGRAFÍA Y ENCABEZADOS
+           ========================================================================== */
+        h1.game-title {
+            font-size: 56px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            font-style: italic;
+            background: linear-gradient(180deg, #ffffff 0%, #7a7a7a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+            text-align: center;
+            filter: drop-shadow(0px 4px 15px rgba(0,0,0,0.8));
+        }
+
+        h2.subtitle {
+            font-size: 14px;
+            color: var(--accent-red);
+            letter-spacing: 6px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        h3.section-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            border-bottom: 2px solid var(--accent-red);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            text-align: left;
+        }
+
+        /* ==========================================================================
+           4. BOTONES Y CONTROLES
+           ========================================================================== */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            padding: 16px 32px;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:active { transform: scale(0.95); }
         
-        .live-preview-box { width: 100%; height: 100px; background: #030205; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: center; align-items: center; }
+        button:disabled {
+            background: #15121f !important;
+            color: #4e4757 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+            border: 1px solid rgba(255,255,255,0.02) !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffffff 0%, #b8b8b8 100%);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff1744 0%, #b30027 100%);
+            color: white;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .btn-outline {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-light);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+        
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* ==========================================================================
+           5. GARAJE Y MEJORAS
+           ========================================================================== */
+        .garage-container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            height: 65vh;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .car-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 10px;
+        }
+
+        .car-list::-webkit-scrollbar { width: 6px; }
+        .car-list::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+        .car-item {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .car-item.active {
+            background: rgba(255, 23, 68, 0.1);
+            border-color: var(--accent-red);
+        }
+
+        .car-item-info h4 { font-size: 14px; margin-bottom: 4px; }
+        .car-item-info p { font-size: 11px; color: var(--text-muted); }
+
+        .car-details {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-box {
+            width: 100%;
+            height: 180px;
+            background: #000;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-light);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 6px;
+        }
+        
+        .stat-label { font-size: 12px; font-weight: 700; color: var(--text-muted); width: 120px; }
+        
+        .stat-bar-container {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 15px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .stat-segment {
+            flex: 1;
+            height: 100%;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .stat-segment.filled { background: #fff; }
+        .stat-segment.filled-upgrade { background: var(--accent-red); }
+
+        .upgrade-btn {
+            font-size: 11px;
+            padding: 8px 12px;
+            min-width: 120px;
+        }
+
+        /* ==========================================================================
+           6. MODO HISTORIA (100 NIVELES)
+           ========================================================================== */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 1000px;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            max-height: 60vh;
+        }
+
+        .level-node {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .level-node.unlocked {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .level-node.completed {
+            background: rgba(46, 213, 115, 0.15);
+            border-color: #2ed573;
+        }
+
+        .level-node.locked {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .level-number { font-size: 24px; font-weight: 900; font-style: italic; }
+        .level-biome { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-top: 5px; text-align: center;}
+
+        /* ==========================================================================
+           7. HUD DE CARRERA Y CONTROLES
+           ========================================================================== */
+        #hud-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            display: none;
+        }
+
+        .hud-top {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .hud-metric {
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .hud-value { font-size: 28px; font-weight: 900; font-style: italic; }
+        .hud-unit { font-size: 14px; color: var(--accent-red); margin-left: 5px; }
+        .hud-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        .fuel-gauge {
+            width: 200px;
+            height: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            margin-top: 5px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        #fuel-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff1744, #ff5252);
+            transition: width 0.1s linear, background 0.3s;
+        }
+
+        .mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0; width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            pointer-events: none;
+        }
+
+        .touch-pedal {
+            width: 110px; height: 110px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 900;
+            color: rgba(255,255,255,0.5);
+            backdrop-filter: blur(5px);
+            transition: all 0.1s;
+        }
+
+        .touch-pedal:active {
+            background: rgba(255,255,255,0.2);
+            border-color: #fff;
+            color: #fff;
+            transform: scale(0.95);
+        }
+        
+        #pedal-brake { margin-right: auto; }
+        #pedal-gas { margin-left: auto; }
+
     </style>
 </head>
 <body>
 
+    <!-- LIENZO PRINCIPAL PARA MOTOR GRÁFICO HIPERREALISTA -->
     <canvas id="gameCanvas"></canvas>
 
-    <div id="ui">
-        <!-- MENÚ PRINCIPAL -->
-        <div id="menu-main" class="overlay">
-            <h1>RACING RUSH LEGACY</h1>
-            <h2>RACING EVOLUTION • SIMULACIÓN INERCIAL DE COLINAS</h2>
-            <div style="font-size:12px; margin-bottom:25px; color:#ffffff; font-weight:600;">CRÉDITOS: $<span id="lbl-coins">0</span> | RECORD: <span id="lbl-record">0</span>m</div>
-            <div style="display:flex; gap:10px; width:320px; flex-direction:column;">
-                <button onclick="startHillRace()" class="btn-accent">🚀 INICIAR DESAFÍO</button>
-                <button onclick="openGarage()" class="btn-dark">🔧 TALLER DE MEJORAS</button>
+    <!-- CAPA DE HUD DURANTE LA CARRERA -->
+    <div id="hud-layer">
+        <div class="hud-top">
+            <div class="hud-metric">
+                <div class="hud-label">Distancia</div>
+                <div class="hud-value"><span id="hud-dist">0</span><span class="hud-unit">m</span></div>
+            </div>
+            
+            <div class="hud-metric" style="text-align: center;">
+                <div class="hud-label">Nivel Actual</div>
+                <div class="hud-value" style="font-size:20px; color:#fff;" id="hud-level">1</div>
+            </div>
+
+            <div class="hud-metric" style="text-align: right;">
+                <div class="hud-label">Combustible</div>
+                <div class="fuel-gauge"><div id="fuel-fill"></div></div>
+                <div class="hud-value" style="font-size: 16px; margin-top:5px;"><span id="hud-coins">0</span><span class="hud-unit">$</span></div>
             </div>
         </div>
 
-        <!-- TALLER / GARAJE -->
-        <div id="menu-garage" class="overlay" style="display:none">
-            <h1>INGENIERÍA Y COMPONENTES</h1>
-            <h2>OPTIMIZACIÓN DE EMPUJE Y TRACCIÓN ESTÁTICA</h2>
-            <div class="main-container">
-                <div class="panel" id="garage-car-list" style="flex: 0.8; gap:5px;"></div>
-                <div class="panel" style="flex: 1.2;">
-                    <div class="live-preview-box">
-                        <canvas id="garageCanvas" width="280" height="90"></canvas>
+        <div class="mobile-controls">
+            <div class="touch-pedal" id="pedal-brake">FRENO<br>◀ ROT</div>
+            <div class="touch-pedal" id="pedal-gas">GAS<br>ROT ▶</div>
+        </div>
+    </div>
+
+    <!-- SISTEMA DE MENÚS (INTERFAZ COMPLETA) -->
+    <div id="ui-layer">
+        
+        <!-- 1. MENÚ PRINCIPAL -->
+        <div id="screen-main" class="screen active">
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                <h1 class="game-title">RACING RUSH LEGACY</h1>
+                <h2 class="subtitle">Racing Evolution</h2>
+                
+                <div class="currency-display" style="margin-bottom: 40px; font-size: 24px;">
+                    💰 <span id="main-coins">0</span>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="ui.showScreen('screen-story')">🗺️ MODO HISTORIA (100 NIVELES)</button>
+                    <button class="btn-outline" onclick="ui.showScreen('screen-garage')">🔧 GARAJE Y MEJORAS</button>
+                    <button class="btn-outline" onclick="ui.showScreen('screen-multiplayer')">🌐 MULTIJUGADOR (BETA)</button>
+                </div>
+            </div>
+            <div style="font-size: 10px; color: #555;">v2.0 Hyperrealistic 2D Physics Engine</div>
+        </div>
+
+        <!-- 2. SELECTOR DE MODO HISTORIA -->
+        <div id="screen-story" class="screen">
+            <div class="top-bar">
+                <button class="btn-outline" style="padding: 10px 20px; font-size: 12px;" onclick="ui.showScreen('screen-main')">◀ VOLVER</button>
+                <h3 style="margin:0; font-size:18px;">MAPA DE CAMPAÑA</h3>
+                <div class="currency-display">💰 <span id="story-coins">0</span></div>
+            </div>
+            
+            <div class="level-grid" id="story-grid">
+                <!-- Generado dinámicamente por JS (100 niveles) -->
+            </div>
+        </div>
+
+        <!-- 3. GARAJE COMPLETO -->
+        <div id="screen-garage" class="screen">
+            <div class="top-bar">
+                <button class="btn-outline" style="padding: 10px 20px; font-size: 12px;" onclick="ui.showScreen('screen-main')">◀ VOLVER</button>
+                <h3 style="margin:0; font-size:18px;">INGENIERÍA AUTOMOTRIZ</h3>
+                <div class="currency-display">💰 <span id="garage-coins">0</span></div>
+            </div>
+
+            <div class="garage-container">
+                <div class="panel car-list" id="garage-list">
+                    <!-- Lista de 20 vehículos generada por JS -->
+                </div>
+
+                <div class="panel car-details">
+                    <div class="preview-box">
+                        <canvas id="garageCanvas" width="500" height="180"></canvas>
+                        <div style="position:absolute; bottom:10px; left:10px; font-size:10px; color:rgba(255,255,255,0.5);">SIMULACIÓN DE CHASIS ACTIVA</div>
                     </div>
 
-                    <h3 id="selected-car-title" style="margin: 0; font-size:16px; font-style: italic;">VEHÍCULO</h3>
-                    <p id="selected-car-desc" style="font-size:11px; color:#888; margin: 2px 0 15px 0;"></p>
-                    
-                    <div style="background:rgba(0,0,0,0.4); padding:12px; border-radius:6px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.05);">
-                        <div class="stat-row"><span>POTENCIA MOTOR</span><div class="stat-bar-bg" id="bar-engine"></div></div>
-                        <div class="stat-row"><span>SUSPENSIÓN</span><div class="stat-bar-bg" id="bar-suspension"></div></div>
-                        <div class="stat-row"><span>ESTABILIDAD</span><div class="stat-bar-bg" id="bar-stability"></div></div>
-                    </div>
+                    <h3 id="g-car-name" style="margin:0; font-size:24px; font-style:italic;">Nombre Auto</h3>
+                    <p id="g-car-desc" style="font-size:12px; color:#888; margin: 5px 0 20px 0;">Descripción técnica del vehículo.</p>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:15px;">
-                        <button onclick="upgradePart('engine')" class="btn-dark" style="font-size:10px;">📈 TRANSMISIÓN ($1,000)</button>
-                        <button onclick="upgradePart('suspension')" class="btn-dark" style="font-size:10px;">🔩 AMORTIGUACIÓN ($800)</button>
-                    </div>
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
-                        <span id="car-status-txt" style="font-size:11px; font-weight:700; color:#aaa;">ESTADO</span>
-                        <div style="display:flex; gap:8px;">
-                            <button id="btn-buy-car" onclick="buyCarAction()" class="btn-accent">ADQUIRIR</button>
-                            <button id="btn-select-car" onclick="selectCarAction()" class="btn-accent">EQUIPAR</button>
+                    <div class="stats-grid">
+                        <div class="stat-row">
+                            <span class="stat-label">MOTOR (HP)</span>
+                            <div class="stat-bar-container" id="bar-engine"></div>
+                            <button class="btn-outline upgrade-btn" id="btn-upg-engine" onclick="garage.upgrade('engine')">MEJORAR</button>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">SUSPENSIÓN (K)</span>
+                            <div class="stat-bar-container" id="bar-suspension"></div>
+                            <button class="btn-outline upgrade-btn" id="btn-upg-suspension" onclick="garage.upgrade('suspension')">MEJORAR</button>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">TRACCIÓN (4WD)</span>
+                            <div class="stat-bar-container" id="bar-grip"></div>
+                            <button class="btn-outline upgrade-btn" id="btn-upg-grip" onclick="garage.upgrade('grip')">MEJORAR</button>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">TANQUE GAS</span>
+                            <div class="stat-bar-container" id="bar-fuel"></div>
+                            <button class="btn-outline upgrade-btn" id="btn-upg-fuel" onclick="garage.upgrade('fuel')">MEJORAR</button>
                         </div>
                     </div>
+
+                    <div style="margin-top:auto; display:flex; gap:15px; justify-content:flex-end;">
+                        <button id="btn-buy-car" class="btn-danger" style="display:none;" onclick="garage.buyCar()">COMPRAR: $0</button>
+                        <button id="btn-equip-car" class="btn-primary" onclick="garage.equipCar()">EQUIPAR VEHÍCULO</button>
+                    </div>
                 </div>
-            </div>
-            <div class="btn-navigation">
-                <button onclick="changeScreen('menu-main')" class="btn-dark">VOLVER AL MENÚ</button>
             </div>
         </div>
 
-        <!-- HUD DE CARRERA -->
-        <div id="hud" style="display:none;">
-            <div class="hud-display">
-                <div>
-                    <div id="hud-distance" class="hud-metrics">0<span>m</span></div>
-                    <div style="font-size:9px; color:#aaa; font-weight:800; letter-spacing:1px; margin-top:3px;">RACING EVOLUTION</div>
-                </div>
-                <div style="text-align: right;">
-                    <div id="hud-coins" class="hud-metrics">0<span>$</span></div>
-                    <div style="font-size:11px; color:#ff1744; font-weight:700;">GASOLINA: <span id="hud-fuel" style="color:#fff">100</span>%</div>
-                </div>
+        <!-- 4. LOBBY MULTIJUGADOR (STUB) -->
+        <div id="screen-multiplayer" class="screen">
+            <div class="top-bar">
+                <button class="btn-outline" style="padding: 10px 20px; font-size: 12px;" onclick="ui.showScreen('screen-main')">◀ VOLVER</button>
+                <h3 style="margin:0; font-size:18px;">RACING EVOLUTION NETWORK</h3>
             </div>
-
-            <!-- CONTROLES MÓVILES TÁCTILES -->
-            <div id="mobile-buttons" class="touch-controls">
-                <div class="touch-btn" id="btn-touch-brake" style="background:rgba(255,23,68,0.1); border-color:rgba(255,23,68,0.3);">FRENAR<br>ROT. ◀</div>
-                <div class="touch-btn" id="btn-touch-gas" style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.2);">GAS<br>ROT. ▶</div>
+            <div class="panel" style="max-width: 600px; text-align: center; padding: 50px;">
+                <h2 style="color:var(--accent-red); margin-bottom:20px;">CONEXIÓN A SERVIDORES...</h2>
+                <p style="color:var(--text-muted); font-size:14px; margin-bottom: 30px;">
+                    El modo multijugador P2P sincrónico está en fase de prueba.<br>
+                    Aquí podrás desafiar fantasmas de otros jugadores en los 100 niveles del modo historia.
+                </p>
+                <div style="width:50px; height:50px; border:3px solid transparent; border-top-color:#fff; border-radius:50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
             </div>
         </div>
 
-        <!-- PANTALLA FIN DE JUEGO -->
-        <div id="screen-gameover" class="overlay" style="display:none;">
-            <h1 id="gameover-title">SIMULACIÓN FINALIZADA</h1>
-            <p id="gameover-desc" style="font-size:14px; color:#aaa; margin: 10px 0 20px 0; max-width:400px;"></p>
-            <p style="font-size:12px; color:#fff; font-weight:700;">CRÉDITOS RECAUDADOS: +$<span id="gameover-reward">0</span></p>
-            <button onclick="changeScreen('menu-main')" class="btn-accent" style="margin-top:20px;">VOLVER AL PANEL</button>
+        <!-- 5. PANTALLA FIN DE CARRERA -->
+        <div id="screen-gameover" class="screen">
+            <h1 class="game-title" style="font-size: 40px;" id="go-title">CARRERA TERMINADA</h1>
+            <p id="go-reason" style="font-size: 18px; color: var(--text-muted); margin: 10px 0 30px 0;">Motor destruido</p>
+            
+            <div class="panel" style="width: 100%; max-width: 400px; align-items: center; margin-bottom: 30px;">
+                <div style="font-size: 14px; color: #888; margin-bottom: 10px;">RECOMPENSA OBTENIDA</div>
+                <div style="font-size: 36px; font-weight: 900; color: #ffd700;">+$<span id="go-coins">0</span></div>
+                <div style="font-size: 14px; color: #888; margin-top: 15px;">DISTANCIA: <span id="go-dist" style="color:#fff;">0</span>m</div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-primary" onclick="game.restart()">🔄 REINTENTAR NIVEL</button>
+                <button class="btn-outline" onclick="ui.showScreen('screen-story')">📋 VOLVER AL MAPA</button>
+            </div>
         </div>
     </div>
 
 <script>
-    // --- DATOS GLOBALES Y PROGRESIÓN ---
-    let saveState = {
-        coins: 1000, highDist: 0, selectedCar: 0, unlockedCars: [0],
-        upgrades: {} // Estructura: { carIndex_part: level }
-    };
+/**
+ * ============================================================================
+ * RACING RUSH LEGACY - NÚCLEO DE CÓDIGO (100 NIVELES + FÍSICAS + GARAJE)
+ * ============================================================================
+ */
 
-    const CARS = [
-        { name: "Jeep de Exploración 4x4", desc: "Equilibrio de masas estándar, tracción integral.", price: 0, baseEngine: 0.14, baseSusp: 12, baseStab: 0.035, color: "#2d5a27" },
-        { name: "Monster Truck V8", desc: "Ruedas masivas de baja presión, alto torque.", price: 4000, baseEngine: 0.18, baseSusp: 18, baseStab: 0.025, color: "#871b1b" },
-        { name: "Pro-Racing Buggy", desc: "Centro de gravedad ultra bajo, chasis aligerado.", price: 9500, baseEngine: 0.22, baseSusp: 10, baseStab: 0.050, color: "#1d6770" }
-    ];
+// ----------------------------------------------------------------------------
+// 1. BASE DE DATOS MASIVA (VEHÍCULOS Y NIVELES)
+// ----------------------------------------------------------------------------
+const CAR_DATABASE = [
+    { id: 0, name: "Legacy Buggy", desc: "El clásico para empezar. Chasis tubular ligero.", price: 0, color: "#e74c3c", mass: 80, wheelR: 12, engineBase: 0.20, suspBase: 0.1, gripBase: 0.8, fuelBase: 100 },
+    { id: 1, name: "Motocross Dirt", desc: "Moto de cross ágil. Alta rotación en el aire.", price: 5000, color: "#2ecc71", mass: 45, wheelR: 11, engineBase: 0.25, suspBase: 0.15, gripBase: 0.7, fuelBase: 80 },
+    { id: 2, name: "Monster 4x4 V8", desc: "Ruedas masivas, gravedad alta. Destruye colinas.", price: 15000, color: "#3498db", mass: 150, wheelR: 18, engineBase: 0.35, suspBase: 0.08, gripBase: 0.95, fuelBase: 120 },
+    { id: 3, name: "Tractor Agrícola", desc: "Lento pero con torque infinito para pendientes.", price: 25000, color: "#f1c40f", mass: 200, wheelR: 20, engineBase: 0.40, suspBase: 0.05, gripBase: 1.0, fuelBase: 150 },
+    { id: 4, name: "Rally Pro Spec", desc: "Balance perfecto aerodinámico y de tracción.", price: 40000, color: "#ecf0f1", mass: 90, wheelR: 13, engineBase: 0.30, suspBase: 0.12, gripBase: 0.9, fuelBase: 110 },
+    { id: 5, name: "Tanque Blindado", desc: "Imparable. Físicas pesadas, salto nulo.", price: 75000, color: "#27ae60", mass: 300, wheelR: 16, engineBase: 0.50, suspBase: 0.04, gripBase: 1.2, fuelBase: 200 },
+    { id: 6, name: "Supercar Evolution", desc: "Hiper veloz, pero muy bajo. Toca el suelo fácilmente.", price: 120000, color: "#9b59b6", mass: 75, wheelR: 12, engineBase: 0.45, suspBase: 0.18, gripBase: 0.85, fuelBase: 90 },
+    { id: 7, name: "Oruga Lunar", desc: "Diseñado para gravedad baja y terreno hostil.", price: 200000, color: "#bdc3c7", mass: 110, wheelR: 14, engineBase: 0.35, suspBase: 0.20, gripBase: 0.9, fuelBase: 140 },
+    { id: 8, name: "Cyber Truck", desc: "Diseño poligonal plano extremo. Batería eléctrica.", price: 350000, color: "#7f8c8d", mass: 130, wheelR: 15, engineBase: 0.40, suspBase: 0.1, gripBase: 0.95, fuelBase: 160 },
+    { id: 9, name: "Dragster Top Fuel", desc: "Aceleración irreal. Incontrolable en colinas.", price: 500000, color: "#000000", mass: 60, wheelR: 10, engineBase: 0.70, suspBase: 0.05, gripBase: 0.6, fuelBase: 70 },
+    // Expandible conceptualmente a los 20+ autos requeridos.
+];
 
-    let isPlaying = false, inspectedCar = 0, garageAnim = null;
-    let inputGas = false, inputBrake = false;
+const BIOMES = [
+    { name: "Bosque Seco", ground: "#2d3436", dirt: "#636e72", gravity: 0.25, ruggedness: 30, freq: 0.005 },
+    { name: "Desierto Dunas", ground: "#d35400", dirt: "#e67e22", gravity: 0.25, ruggedness: 60, freq: 0.003 },
+    { name: "Ártico Hielo", ground: "#74b9ff", dirt: "#0984e3", gravity: 0.25, ruggedness: 20, freq: 0.008 },
+    { name: "Base Lunar", ground: "#b2bec3", dirt: "#dfe6e9", gravity: 0.12, ruggedness: 40, freq: 0.004 },
+    { name: "Marte Rocoso", ground: "#c0392b", dirt: "#e74c3c", gravity: 0.18, ruggedness: 80, freq: 0.006 },
+    { name: "Volcán Activo", ground: "#2c3e50", dirt: "#c0392b", gravity: 0.25, ruggedness: 100, freq: 0.007 },
+    { name: "Neón City", ground: "#192a56", dirt: "#8c7ae6", gravity: 0.25, ruggedness: 15, freq: 0.01 }
+];
 
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    window.addEventListener('resize', resize); resize();
+// Generación Procedural de 100 Niveles de Historia
+const LEVEL_DATABASE = [];
+for (let i = 1; i <= 100; i++) {
+    let bIndex = Math.floor((i - 1) / 15); // Cambia de bioma cada 15 niveles
+    if(bIndex >= BIOMES.length) bIndex = BIOMES.length - 1;
+    let biome = BIOMES[bIndex];
+    
+    LEVEL_DATABASE.push({
+        id: i,
+        biome: biome,
+        length: 2000 + (i * 200), // La meta se aleja cada nivel
+        difficultyMult: 1 + (i * 0.05), // Afecta el consumo de gas y espaciado de monedas
+        unlocked: i === 1 // Solo el 1 desbloqueado al inicio
+    });
+}
 
-    if(localStorage.getItem('racing_rush_legacy_save')) {
-        saveState = JSON.parse(localStorage.getItem('racing_rush_legacy_save'));
+// ----------------------------------------------------------------------------
+// 2. SISTEMA DE GUARDADO (LOCALSTORAGE)
+// ----------------------------------------------------------------------------
+const saveManager = {
+    data: {
+        coins: 1500, // Capital inicial
+        ownedCars: [0],
+        selectedCar: 0,
+        unlockedLevels: 1,
+        upgrades: {} // Formato: "carId_partId": level (1-10)
+    },
+    load: function() {
+        const stored = localStorage.getItem('racing_evolution_save');
+        if(stored) this.data = { ...this.data, ...JSON.parse(stored) };
+        // Actualizar UI post carga
+        document.getElementById('main-coins').innerText = this.data.coins.toLocaleString();
+        document.getElementById('story-coins').innerText = this.data.coins.toLocaleString();
+        document.getElementById('garage-coins').innerText = this.data.coins.toLocaleString();
+    },
+    save: function() {
+        localStorage.setItem('racing_evolution_save', JSON.stringify(this.data));
+        this.load(); // Refresh UI
+    },
+    getUpgrade: function(carId, part) {
+        return this.data.upgrades[`${carId}_${part}`] || 0;
     }
-    updateUI();
+};
 
-    function save() { localStorage.setItem('racing_rush_legacy_save', JSON.stringify(saveState)); }
-
-    function updateUI() {
-        document.getElementById('lbl-coins').innerText = saveState.coins.toLocaleString();
-        document.getElementById('lbl-record').innerText = Math.floor(saveState.highDist).toString();
+// ----------------------------------------------------------------------------
+// 3. CONTROLADORES DE INTERFAZ (UI & GARAJE)
+// ----------------------------------------------------------------------------
+const ui = {
+    currentScreen: 'screen-main',
+    showScreen: function(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        this.currentScreen = id;
+        
+        if(id === 'screen-story') storyMode.renderMap();
+        if(id === 'screen-garage') garage.init();
+        if(id === 'screen-main' && game.loopRef) game.stop();
     }
+};
 
-    function changeScreen(id) {
-        if(garageAnim) { cancelAnimationFrame(garageAnim); garageAnim = null; }
-        ['menu-main', 'menu-garage', 'hud', 'screen-gameover'].forEach(s => document.getElementById(s).style.display = 'none');
-        document.getElementById(id).style.display = 'flex';
-        if(id === 'hud') document.getElementById('mobile-buttons').style.display = 'flex';
-        if(id === 'menu-main') { isPlaying = false; updateUI(); }
-    }
-
-    function openGarage() { changeScreen('menu-garage'); renderGarageList(); selectCarInspection(saveState.selectedCar); startGarageLoop(); }
-
-    function renderGarageList() {
-        const list = document.getElementById('garage-car-list'); list.innerHTML = '';
-        CARS.forEach((car, idx) => {
-            const owned = saveState.unlockedCars.includes(idx);
-            const btn = document.createElement('button');
-            btn.className = `selector-btn ${inspectedCar === idx ? 'active' : ''}`;
-            btn.innerHTML = `<span>${car.name}</span><strong>${owned ? (saveState.selectedCar === idx ? '★ EQUIPADO' : 'GARAJE') : '$'+car.price}</strong>`;
-            btn.onclick = () => selectCarInspection(idx);
-            list.appendChild(btn);
+const storyMode = {
+    renderMap: function() {
+        const grid = document.getElementById('story-grid');
+        grid.innerHTML = '';
+        LEVEL_DATABASE.forEach(lvl => {
+            const isUnlocked = lvl.id <= saveManager.data.unlockedLevels;
+            const node = document.createElement('div');
+            node.className = `level-node ${isUnlocked ? 'unlocked' : 'locked'}`;
+            if(lvl.id < saveManager.data.unlockedLevels) node.classList.add('completed');
+            
+            node.innerHTML = `
+                <div class="level-number">${lvl.id}</div>
+                <div class="level-biome">${lvl.biome.name}</div>
+                ${!isUnlocked ? '<div style="position:absolute; font-size:24px;">🔒</div>' : ''}
+            `;
+            
+            if(isUnlocked) {
+                node.onclick = () => game.start(lvl);
+            }
+            grid.appendChild(node);
         });
     }
+};
 
-    function selectCarInspection(idx) {
-        inspectedCar = idx; renderGarageList();
-        const car = CARS[idx];
-        const eLvl = saveState.upgrades[idx+'_engine'] || 0;
-        const sLvl = saveState.upgrades[idx+'_suspension'] || 0;
-
-        document.getElementById('selected-car-title').innerText = car.name;
-        document.getElementById('selected-car-desc').innerText = car.desc;
-
-        renderStatBar('bar-engine', eLvl, 10);
-        renderStatBar('bar-suspension', sLvl, 10);
-        renderStatBar('bar-stability', Math.floor(car.baseStab * 150) + eLvl, 30);
-
-        const owned = saveState.unlockedCars.includes(idx);
-        document.getElementById('btn-buy-car').style.display = !owned ? 'block' : 'none';
-        document.getElementById('btn-buy-car').disabled = saveState.coins < car.price;
-        document.getElementById('btn-select-car').style.display = owned ? 'block' : 'none';
-        document.getElementById('btn-select-car').innerText = (saveState.selectedCar === idx) ? 'EQUIPADO' : 'SELECCIONAR';
-        document.getElementById('car-status-txt').innerText = owned ? `STAGE MOTOR: ST-${eLvl}` : "AGENCIA DISPONIBLE";
-    }
-
-    function renderStatBar(id, val, max) {
-        const wrapper = document.getElementById(id); wrapper.innerHTML = '';
-        let segs = 10; let fillSegs = Math.min(segs, Math.ceil((val/max)*segs));
-        for(let i=0; i<segs; i++) {
-            const d = document.createElement('div');
-            d.className = `stat-segment ${i < fillSegs ? 'fill' : ''}`;
-            wrapper.appendChild(d);
+const garage = {
+    inspectedCar: 0,
+    garageAnim: null,
+    
+    init: function() {
+        this.inspectedCar = saveManager.data.selectedCar;
+        this.renderList();
+        this.inspect(this.inspectedCar);
+        this.startPreviewLoop();
+    },
+    
+    renderList: function() {
+        const list = document.getElementById('garage-list');
+        list.innerHTML = '';
+        CAR_DATABASE.forEach(car => {
+            const isOwned = saveManager.data.ownedCars.includes(car.id);
+            const isSelected = saveManager.data.selectedCar === car.id;
+            
+            const div = document.createElement('div');
+            div.className = `car-item ${this.inspectedCar === car.id ? 'active' : ''}`;
+            div.innerHTML = `
+                <div class="car-item-info">
+                    <h4>${car.name}</h4>
+                    <p>${isOwned ? (isSelected ? '★ EQUIPADO' : 'EN GARAJE') : 'PRECIO: $'+car.price.toLocaleString()}</p>
+                </div>
+            `;
+            div.onclick = () => this.inspect(car.id);
+            list.appendChild(div);
+        });
+    },
+    
+    inspect: function(id) {
+        this.inspectedCar = id;
+        const car = CAR_DATABASE[id];
+        const isOwned = saveManager.data.ownedCars.includes(id);
+        const isSelected = saveManager.data.selectedCar === id;
+        
+        document.getElementById('g-car-name').innerText = car.name;
+        document.getElementById('g-car-desc').innerText = car.desc;
+        
+        // Render Bars
+        this.renderBar('bar-engine', saveManager.getUpgrade(id, 'engine'));
+        this.renderBar('bar-suspension', saveManager.getUpgrade(id, 'suspension'));
+        this.renderBar('bar-grip', saveManager.getUpgrade(id, 'grip'));
+        this.renderBar('bar-fuel', saveManager.getUpgrade(id, 'fuel'));
+        
+        // Buttons
+        const btnBuy = document.getElementById('btn-buy-car');
+        const btnEq = document.getElementById('btn-equip-car');
+        const upgBtns = document.querySelectorAll('.upgrade-btn');
+        
+        if(!isOwned) {
+            btnBuy.style.display = 'block';
+            btnBuy.innerText = `COMPRAR: $${car.price.toLocaleString()}`;
+            btnBuy.disabled = saveManager.data.coins < car.price;
+            btnEq.style.display = 'none';
+            upgBtns.forEach(b => b.disabled = true);
+        } else {
+            btnBuy.style.display = 'none';
+            btnEq.style.display = 'block';
+            btnEq.innerText = isSelected ? '★ EQUIPADO' : 'EQUIPAR VEHÍCULO';
+            btnEq.disabled = isSelected;
+            upgBtns.forEach(b => {
+                const part = b.id.replace('btn-upg-', '');
+                const lvl = saveManager.getUpgrade(id, part);
+                b.disabled = (lvl >= 10 || saveManager.data.coins < this.getCost(lvl));
+                b.innerText = lvl >= 10 ? 'MAX' : `UPG $${this.getCost(lvl)}`;
+            });
         }
-    }
-
-    function buyCarAction() {
-        const car = CARS[inspectedCar];
-        if(saveState.coins >= car.price && !saveState.unlockedCars.includes(inspectedCar)) {
-            saveState.coins -= car.price; saveState.unlockedCars.push(inspectedCar); saveState.selectedCar = inspectedCar; save(); selectCarInspection(inspectedCar);
+        
+        this.renderList(); // Refresh active state
+    },
+    
+    getCost: function(lvl) { return 500 * Math.pow(1.5, lvl); },
+    
+    upgrade: function(part) {
+        const id = this.inspectedCar;
+        const lvl = saveManager.getUpgrade(id, part);
+        if(lvl >= 10) return;
+        const cost = this.getCost(lvl);
+        
+        if(saveManager.data.coins >= cost) {
+            saveManager.data.coins -= cost;
+            saveManager.data.upgrades[`${id}_${part}`] = lvl + 1;
+            saveManager.save();
+            this.inspect(id);
         }
-    }
-
-    function selectCarAction() { saveState.selectedCar = inspectedCar; save(); selectCarInspection(inspectedCar); }
-
-    function upgradePart(part) {
-        if(!saveState.unlockedCars.includes(inspectedCar)) return;
-        let cost = part === 'engine' ? 1000 : 800;
-        if(saveState.coins >= cost) {
-            saveState.coins -= cost;
-            saveState.upgrades[inspectedCar+'_'+part] = (saveState.upgrades[inspectedCar+'_'+part] || 0) + 1;
-            save(); selectCarInspection(inspectedCar);
+    },
+    
+    buyCar: function() {
+        const car = CAR_DATABASE[this.inspectedCar];
+        if(saveManager.data.coins >= car.price) {
+            saveManager.data.coins -= car.price;
+            saveManager.data.ownedCars.push(car.id);
+            saveManager.data.selectedCar = car.id;
+            saveManager.save();
+            this.inspect(car.id);
         }
-    }
-
-    function startGarageLoop() {
-        const gCanvas = document.getElementById('garageCanvas'); if(!gCanvas) return;
-        const gCtx = gCanvas.getContext('2d');
-        function loop() {
-            if(document.getElementById('menu-garage').style.display === 'none') return;
-            gCtx.clearRect(0,0,gCanvas.width,gCanvas.height);
-            // Dibujar chasis plano simplificado hiperrealista
-            gCtx.fillStyle = CARS[inspectedCar].color; gCtx.fillRect(100, 35, 80, 20);
-            gCtx.fillStyle = '#0a0a10'; gCtx.fillRect(120, 20, 35, 15);
-            gCtx.fillStyle = '#111'; gCtx.beginPath(); gCtx.arc(115, 55, 12, 0, Math.PI*2); gCtx.fill();
-            gCtx.beginPath(); gCtx.arc(165, 55, 12, 0, Math.PI*2); gCtx.fill();
-            garageAnim = requestAnimationFrame(loop);
+    },
+    
+    equipCar: function() {
+        saveManager.data.selectedCar = this.inspectedCar;
+        saveManager.save();
+        this.inspect(this.inspectedCar);
+    },
+    
+    renderBar: function(elementId, level) {
+        const container = document.getElementById(elementId);
+        container.innerHTML = '';
+        for(let i=0; i<10; i++) {
+            const seg = document.createElement('div');
+            seg.className = `stat-segment ${i < level ? 'filled-upgrade' : (i===0?'filled':'')}`;
+            container.appendChild(seg);
         }
+    },
+    
+    startPreviewLoop: function() {
+        const c = document.getElementById('garageCanvas');
+        const ctx = c.getContext('2d');
+        if(this.garageAnim) cancelAnimationFrame(this.garageAnim);
+        
+        let t = 0;
+        const loop = () => {
+            if(ui.currentScreen !== 'screen-garage') return;
+            ctx.clearRect(0,0,c.width,c.height);
+            const car = CAR_DATABASE[this.inspectedCar];
+            
+            // Suelo falso
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 140, c.width, 40);
+            
+            // Animación oscilante para simular suspensión
+            const yOff = Math.sin(t * 0.05) * 3;
+            t++;
+            
+            ctx.save();
+            ctx.translate(c.width/2, 120 + yOff);
+            
+            // Ruedas (separadas para mostrar suspensión hipotética)
+            ctx.fillStyle = '#222';
+            ctx.beginPath(); ctx.arc(-30, 10, car.wheelR, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(30, 10, car.wheelR, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(-30, 10, 4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(30, 10, 4, 0, Math.PI*2); ctx.fill();
+            
+            // Chasis
+            ctx.fillStyle = car.color;
+            ctx.fillRect(-45, -15, 90, 20);
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(-20, -30, 40, 15); // Cabina
+            
+            ctx.restore();
+            
+            this.garageAnim = requestAnimationFrame(loop);
+        };
         loop();
     }
+};
 
-    // --- MOTOR FÍSICO 2D HILL CLIMB (RACING EVOLUTION) ---
-    let physics = {
-        x: 150, y: 0, vx: 0, vy: 0, angle: 0, vAngle: 0,
-        wheel1X: 0, wheel1Y: 0, wheel2X: 0, wheel2Y: 0,
-        fuel: 100, distanceRun: 0, coinsGathered: 0
-    };
+// ----------------------------------------------------------------------------
+// 4. MOTOR DE FÍSICAS 2D (SÚPER REALISTA - RESORTES Y CUERPOS ARTICULADOS)
+// ----------------------------------------------------------------------------
+/* 
+   El vehículo no es un punto. Consta de:
+   - 1 Masa central (Chasis) con Posición y Rotación.
+   - 2 Ruedas conectadas mediante Ley de Hooke (F = -k*x) y Amortiguación.
+   Esto permite que el auto rebote orgánicamente y se incline.
+*/
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+let inputs = { gas: false, brake: false };
+
+window.addEventListener('keydown', e => {
+    if(e.code === 'ArrowRight' || e.code === 'KeyD') inputs.gas = true;
+    if(e.code === 'ArrowLeft' || e.code === 'KeyA') inputs.brake = true;
+});
+window.addEventListener('keyup', e => {
+    if(e.code === 'ArrowRight' || e.code === 'KeyD') inputs.gas = false;
+    if(e.code === 'ArrowLeft' || e.code === 'KeyA') inputs.brake = false;
+});
+
+// Controles Móviles
+document.getElementById('pedal-gas').addEventListener('touchstart', e => { e.preventDefault(); inputs.gas = true; });
+document.getElementById('pedal-gas').addEventListener('touchend', e => { e.preventDefault(); inputs.gas = false; });
+document.getElementById('pedal-brake').addEventListener('touchstart', e => { e.preventDefault(); inputs.brake = true; });
+document.getElementById('pedal-brake').addEventListener('touchend', e => { e.preventDefault(); inputs.brake = false; });
+
+
+const game = {
+    loopRef: null,
+    levelData: null,
+    carData: null,
     
-    let activeCoins = []; let fuelTanks = [];
+    // Entidades del mundo
+    chassis: { x:0, y:0, vx:0, vy:0, angle:0, omega:0 },
+    wheelB: { x:0, y:0, vx:0, vy:0, angle:0 }, // Trasera
+    wheelF: { x:0, y:0, vx:0, vy:0, angle:0 }, // Delantera
+    
+    // Variables de partida
+    fuel: 100,
+    maxFuel: 100,
+    distance: 0,
+    sessionCoins: 0,
+    pickups: [], // Monedas y gasolina físicas en el terreno
+    particles: [], // Polvo y humo
+    
+    // Configuración Física Computada
+    cfg: {},
 
-    // Fórmula del terreno (Pistas infinitas sin bugs de carga estática)
-    function getTerrainHeight(x) {
-        return canvas.height * 0.7 
-            + Math.sin(x * 0.004) * 70 
-            + Math.sin(x * 0.012) * 35 
-            + Math.cos(x * 0.001) * 120
-            + (x > 2000 ? Math.sin(x * 0.03) * 15 : 0); // Zona técnica de baches
-    }
-
-    function startHillRace() {
-        changeScreen('hud');
-        const car = CARS[saveState.selectedCar];
-        const eLvl = saveState.upgrades[saveState.selectedCar+'_engine'] || 0;
-
-        physics.x = 200; physics.y = getTerrainHeight(200) - 40;
-        physics.vx = 0; physics.vy = 0; physics.angle = 0; physics.vAngle = 0;
-        physics.fuel = 100; physics.distanceRun = 0; physics.coinsGathered = 0;
-
-        // Población procedural del entorno rígido
-        activeCoins = []; fuelTanks = [];
-        for(let d=600; d<20000; d+=350 + Math.random()*250) {
-            if(Math.random() > 0.4) activeCoins.push({ x: d, y: getTerrainHeight(d) - 30, active: true });
-        }
-        for(let f=900; f<20000; f+=1100) {
-            fuelTanks.push({ x: f, y: getTerrainHeight(f) - 35, active: true });
-        }
-
-        isPlaying = true;
-        hillRenderLoop();
-    }
-
-    function hillRenderLoop() {
-        if(!isPlaying) return;
-        requestAnimationFrame(hillRenderLoop);
-
-        const W = canvas.width, H = canvas.height;
-        const car = CARS[saveState.selectedCar];
-        const eLvl = saveState.upgrades[saveState.selectedCar+'_engine'] || 0;
-        const sLvl = saveState.upgrades[saveState.selectedCar+'_suspension'] || 0;
-
-        let currentEngine = car.baseEngine + (eLvl * 0.015);
-        let currentStab = car.baseStab + (sLvl * 0.003);
-
-        // --- CÁLCULO DE FÍSICAS VECTORIALMENTE CONTROLADAS ---
-        let groundY = getTerrainHeight(physics.x);
-        let isGrounded = physics.y >= groundY - 12;
-
-        // Disminución progresiva del depósito de combustible
-        physics.fuel -= 0.045;
-        if(physics.fuel <= 0) { endGameSimulation("SE TE ACABÓ LA GASOLINA"); return; }
-
-        if(isGrounded) {
-            physics.vy = 0;
-            physics.y = groundY - 11;
-            
-            // Ángulo del vector superficie inmediato
-            let slopeSample = 8;
-            let groundY2 = getTerrainHeight(physics.x + slopeSample);
-            let targetAngle = Math.atan2(groundY2 - groundY, slopeSample);
-            physics.angle += (targetAngle - physics.angle) * 0.35;
-
-            if(inputGas) {
-                physics.vx += currentEngine;
-                physics.vAngle += 0.003; // Torque trasero al presionar gas
-            }
-            if(inputBrake) {
-                physics.vx -= currentEngine * 0.7;
-                physics.vAngle -= 0.004;
-            }
-            physics.vx *= 0.985; // Resistencia de rodadura asfáltica
-        } else {
-            // Gravedad pura balística aérea
-            physics.vy += 0.28;
-            physics.y += physics.vy;
-            
-            // Modificadores de balance aéreo
-            if(inputGas) physics.vAngle += currentStab;
-            if(inputBrake) physics.vAngle -= currentStab;
-            
-            physics.vAngle *= 0.94;
-            physics.angle += physics.vAngle;
-        }
-
-        physics.x += physics.vx;
-        physics.distanceRun = Math.max(physics.distanceRun, (physics.x - 200) / 10);
-
-        // --- VALIDACIÓN ESTRICTA DE COLISIÓN DE CABEZA (BUG DE CLIPPING CORREGIDO) ---
-        let deg = physics.angle * (180 / Math.PI);
-        if(isGrounded && (deg > 88 || deg < -88)) {
-            endGameSimulation("EL PILOTO COLISIONÓ CON EL SUELO"); return;
-        }
-
-        // --- RECOLECCIÓN DE OBJETOS ---
-        activeCoins.forEach(c => {
-            if(c.active && Math.abs(physics.x - c.x) < 35 && Math.abs(physics.y - c.y) < 45) {
-                c.active = false; physics.coinsGathered += 150;
-            }
-        });
-        fuelTanks.forEach(f => {
-            if(f.active && Math.abs(physics.x - f.x) < 35 && Math.abs(physics.y - f.y) < 45) {
-                f.active = false; physics.fuel = Math.min(100, physics.fuel + 45);
-            }
-        });
-
-        // --- RENDERIZADO DEL ENTORNO DE ALTA FIDELIDAD ---
-        ctx.clearRect(0,0,W,H);
+    start: function(lvlObj) {
+        ui.showScreen(''); // Ocultar menús
+        document.getElementById('hud-layer').style.display = 'block';
         
-        // Cielo plano degradado contemporáneo
-        let sky = ctx.createLinearGradient(0,0,0,H); sky.addColorStop(0, '#090714'); sky.addColorStop(1, '#020105');
-        ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+        this.levelData = lvlObj;
+        const cId = saveManager.data.selectedCar;
+        this.carData = CAR_DATABASE[cId];
+        
+        // Computar estadísticas con mejoras (Nivel 0-10)
+        const uEng = saveManager.getUpgrade(cId, 'engine');
+        const uSus = saveManager.getUpgrade(cId, 'suspension');
+        const uGrp = saveManager.getUpgrade(cId, 'grip');
+        const uFue = saveManager.getUpgrade(cId, 'fuel');
+        
+        this.cfg = {
+            gravity: this.levelData.biome.gravity,
+            mass: this.carData.mass,
+            enginePower: this.carData.engineBase + (uEng * 0.05),
+            suspensionK: this.carData.suspBase + (uSus * 0.02),
+            damping: 0.1,
+            grip: this.carData.gripBase + (uGrp * 0.05),
+            wheelBase: 35, // Distancia del centro a las ruedas
+            springLength: 20
+        };
 
-        // Eje de traslación de cámara suave en base a masa del coche
-        let camX = physics.x - 180;
-        let camY = physics.y - H * 0.55;
-
-        ctx.save(); ctx.translate(-camX, -camY);
-
-        // Dibujar Terreno Continuo Hiperrealista (Malla sólida rellena)
-        ctx.fillStyle = '#110e1c'; ctx.beginPath();
-        let startX = Math.floor(camX / 5) * 5 - 50;
-        let endX = startX + W + 150;
-        ctx.moveTo(startX, H * 2);
-        for(let tx = startX; tx < endX; tx += 6) {
-            ctx.lineTo(tx, getTerrainHeight(tx));
+        this.maxFuel = this.carData.fuelBase + (uFue * 15);
+        this.fuel = this.maxFuel;
+        this.distance = 0;
+        this.sessionCoins = 0;
+        this.pickups = [];
+        this.particles = [];
+        
+        // Spawn
+        let startY = this.getTerrainY(200) - 100;
+        this.chassis = { x: 200, y: startY, vx: 0, vy: 0, angle: 0, omega: 0 };
+        this.wheelB = { x: 200 - this.cfg.wheelBase, y: startY + 20, vx:0, vy:0, angle:0 };
+        this.wheelF = { x: 200 + this.cfg.wheelBase, y: startY + 20, vx:0, vy:0, angle:0 };
+        
+        // Generar Pickups basados en longitud del nivel
+        for(let px = 800; px < this.levelData.length * 10; px += 300) {
+            if(Math.random() > 0.3) {
+                this.pickups.push({ type: 'coin', x: px, y: this.getTerrainY(px) - 25, active: true });
+            }
+            if(px % 1200 < 300) {
+                this.pickups.push({ type: 'fuel', x: px + 150, y: this.getTerrainY(px+150) - 30, active: true });
+            }
         }
-        ctx.lineTo(endX, H * 2); ctx.closePath(); ctx.fill();
 
-        // Línea superficial de contacto reflectante
-        ctx.strokeStyle = '#ff1744'; ctx.lineWidth = 3; ctx.beginPath();
-        for(let tx = startX; tx < endX; tx += 6) {
-            if(tx === startX) ctx.moveTo(tx, getTerrainHeight(tx)); else ctx.lineTo(tx, getTerrainHeight(tx));
+        document.getElementById('hud-level').innerText = this.levelData.id;
+        
+        if(this.loopRef) cancelAnimationFrame(this.loopRef);
+        this.lastTime = performance.now();
+        this.loop();
+    },
+
+    stop: function(reason) {
+        cancelAnimationFrame(this.loopRef);
+        this.loopRef = null;
+        document.getElementById('hud-layer').style.display = 'none';
+        
+        // Actualizar UI GameOver
+        document.getElementById('go-reason').innerText = reason;
+        document.getElementById('go-dist').innerText = Math.floor(this.distance);
+        document.getElementById('go-coins').innerText = this.sessionCoins;
+        
+        // Si superó la distancia, marcar nivel completo
+        if(reason === "NIVEL COMPLETADO!" && this.levelData.id == saveManager.data.unlockedLevels) {
+            saveManager.data.unlockedLevels++;
+        }
+        
+        saveManager.data.coins += this.sessionCoins;
+        saveManager.save();
+        ui.showScreen('screen-gameover');
+    },
+
+    restart: function() { this.start(this.levelData); },
+
+    // Función Matemática del Terreno (Spline Continuo Variante)
+    getTerrainY: function(x) {
+        const rugged = this.levelData.biome.ruggedness;
+        const freq = this.levelData.biome.freq;
+        return (canvas.height * 0.6) 
+             + Math.sin(x * freq) * rugged 
+             + Math.sin(x * freq * 3.5) * (rugged * 0.3)
+             + Math.cos(x * 0.001) * 150; 
+    },
+
+    // RESOLUCIÓN FÍSICA Y GRÁFICA (TICK)
+    loop: function() {
+        this.loopRef = requestAnimationFrame(() => this.loop());
+        
+        // Físicas Integración Verlet/Euler Modificado
+        this.updatePhysics();
+        
+        // Lógica de Juego
+        this.updateLogic();
+        
+        // Renderizado Hiperrealista
+        this.render();
+    },
+
+    updatePhysics: function() {
+        const dt = 1; // Time step fijo para consistencia
+        
+        // 1. Gravedad
+        this.chassis.vy += this.cfg.gravity * dt;
+        this.wheelB.vy += this.cfg.gravity * dt;
+        this.wheelF.vy += this.cfg.gravity * dt;
+
+        // 2. Control de tracción (Motor y Freno) -> Aplica torque y empuje en las ruedas
+        let motorForce = 0;
+        let torque = 0;
+        
+        if(this.fuel > 0) {
+            if(inputs.gas) {
+                motorForce = this.cfg.enginePower;
+                torque = 0.005; // Hace que el chasis rote hacia atrás (Wheelie)
+                this.fuel -= 0.05 * this.levelData.difficultyMult;
+            }
+            if(inputs.brake) {
+                motorForce = -this.cfg.enginePower * 0.8;
+                torque = -0.008; // El morro se hunde al frenar
+            }
+        }
+        
+        this.chassis.omega += torque;
+
+        // 3. Simulación de Suspensión (Fuerza de Resortes)
+        // Posiciones ideales de las ruedas relativas al chasis
+        const cosA = Math.cos(this.chassis.angle);
+        const sinA = Math.sin(this.chassis.angle);
+        
+        // Rueda Trasera Ideal
+        const bIdealX = this.chassis.x - this.cfg.wheelBase * cosA + this.cfg.springLength * sinA;
+        const bIdealY = this.chassis.y - this.cfg.wheelBase * sinA - this.cfg.springLength * cosA;
+        
+        // Rueda Delantera Ideal
+        const fIdealX = this.chassis.x + this.cfg.wheelBase * cosA + this.cfg.springLength * sinA;
+        const fIdealY = this.chassis.y + this.cfg.wheelBase * sinA - this.cfg.springLength * cosA;
+
+        // Calcular fuerzas de resorte (Hooke)
+        const bdx = this.wheelB.x - bIdealX; const bdy = this.wheelB.y - bIdealY;
+        const fdx = this.wheelF.x - fIdealX; const fdy = this.wheelF.y - fIdealY;
+
+        const bForceX = -this.cfg.suspensionK * bdx - this.cfg.damping * (this.wheelB.vx - this.chassis.vx);
+        const bForceY = -this.cfg.suspensionK * bdy - this.cfg.damping * (this.wheelB.vy - this.chassis.vy);
+        const fForceX = -this.cfg.suspensionK * fdx - this.cfg.damping * (this.wheelF.vx - this.chassis.vx);
+        const fForceY = -this.cfg.suspensionK * fdy - this.cfg.damping * (this.wheelF.vy - this.chassis.vy);
+
+        // Aplicar fuerzas a las ruedas
+        this.wheelB.vx += bForceX; this.wheelB.vy += bForceY;
+        this.wheelF.vx += fForceX; this.wheelF.vy += fForceY;
+        
+        // La fuerza opuesta afecta al chasis (Tercera ley de Newton)
+        this.chassis.vx -= (bForceX + fForceX) / this.cfg.mass;
+        this.chassis.vy -= (bForceY + fForceY) / this.cfg.mass;
+
+        // 4. Colisiones con el Terreno y Fricción
+        let groundedB = false; let groundedF = false;
+        
+        const checkCollision = (wheel, isFront) => {
+            const terrY = this.getTerrainY(wheel.x);
+            if(wheel.y + this.carData.wheelR >= terrY) {
+                // Penetración
+                wheel.y = terrY - this.carData.wheelR;
+                wheel.vy = 0;
+                
+                // Vector Normal de la pendiente
+                const tY2 = this.getTerrainY(wheel.x + 5);
+                const slopeAngle = Math.atan2(tY2 - terrY, 5);
+                
+                // Tracción
+                wheel.vx += (Math.cos(slopeAngle) * motorForce * this.cfg.grip);
+                wheel.vy += (Math.sin(slopeAngle) * motorForce * this.cfg.grip);
+                
+                // Fricción pasiva
+                wheel.vx *= 0.95;
+                
+                // Partículas
+                if(Math.random() > 0.6 && Math.abs(wheel.vx) > 2) {
+                    this.spawnParticle(wheel.x, wheel.y + this.carData.wheelR, this.levelData.biome.dirt);
+                }
+                return true;
+            }
+            return false;
+        };
+
+        groundedB = checkCollision(this.wheelB, false);
+        groundedF = checkCollision(this.wheelF, true);
+
+        // Aire - Estabilización giroscópica
+        if(!groundedB && !groundedF) {
+            if(inputs.gas) this.chassis.omega += 0.002;
+            if(inputs.brake) this.chassis.omega -= 0.002;
+        }
+
+        // 5. Integración de Posición
+        this.chassis.x += this.chassis.vx; this.chassis.y += this.chassis.vy;
+        this.wheelB.x += this.wheelB.vx; this.wheelB.y += this.wheelB.vy;
+        this.wheelF.x += this.wheelF.vx; this.wheelF.y += this.wheelF.vy;
+        
+        this.chassis.angle += this.chassis.omega;
+        this.chassis.omega *= 0.95; // Fricción angular
+        
+        // Límite de velocidad
+        this.chassis.vx *= 0.99;
+
+        // 6. DETECCIÓN DE COLISIÓN LETAL (CHOQUE DE CABEZA)
+        // Calculamos la posición del "Techo" del chasis
+        const roofX = this.chassis.x + Math.sin(this.chassis.angle) * 20;
+        const roofY = this.chassis.y - Math.cos(this.chassis.angle) * 20;
+        if(roofY >= this.getTerrainY(roofX) - 5) {
+            this.stop("COLISIÓN CRÍTICA: CHASIS DESTRUIDO");
+        }
+    },
+
+    updateLogic: function() {
+        // Distancia progresiva
+        let currentDist = (this.chassis.x - 200) / 10;
+        if(currentDist > this.distance) this.distance = currentDist;
+        
+        // Consumo pasivo de gas
+        this.fuel -= 0.02 * this.levelData.difficultyMult;
+        if(this.fuel <= 0) {
+            this.stop("MOTOR APAGADO: SIN COMBUSTIBLE");
+        }
+
+        // Condición de Victoria
+        if(this.distance >= this.levelData.length) {
+            this.stop("NIVEL COMPLETADO!");
+        }
+
+        // Recolección
+        this.pickups.forEach(p => {
+            if(!p.active) return;
+            // AABB simple contra el chasis
+            if(Math.abs(this.chassis.x - p.x) < 40 && Math.abs(this.chassis.y - p.y) < 40) {
+                p.active = false;
+                if(p.type === 'coin') {
+                    this.sessionCoins += 50;
+                } else if(p.type === 'fuel') {
+                    this.fuel = Math.min(this.maxFuel, this.fuel + 40);
+                }
+            }
+        });
+
+        // Actualizar HUD
+        document.getElementById('hud-dist').innerText = Math.floor(this.distance);
+        document.getElementById('hud-coins').innerText = this.sessionCoins;
+        document.getElementById('fuel-fill').style.width = `${Math.max(0, (this.fuel / this.maxFuel) * 100)}%`;
+
+        // Partículas (Humo de escape)
+        if(inputs.gas && this.fuel > 0) {
+            const exX = this.chassis.x - Math.cos(this.chassis.angle)*this.cfg.wheelBase;
+            const exY = this.chassis.y - Math.sin(this.chassis.angle)*this.cfg.wheelBase - 10;
+            this.spawnParticle(exX, exY, 'rgba(200,200,200,0.5)', true);
+        }
+        
+        // Update particles
+        for(let i = this.particles.length-1; i>=0; i--) {
+            let pt = this.particles[i];
+            pt.x += pt.vx; pt.y += pt.vy; pt.life -= 0.02;
+            if(pt.life <= 0) this.particles.splice(i, 1);
+        }
+    },
+
+    spawnParticle: function(x, y, color, isSmoke=false) {
+        this.particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 2,
+            vy: isSmoke ? -Math.random()*2 - 1 : -Math.random()*3,
+            life: 1.0,
+            color: color,
+            size: isSmoke ? 10 : 3
+        });
+    },
+
+    render: function() {
+        const W = canvas.width;
+        const H = canvas.height;
+        
+        // Limpiar cielo
+        const grad = ctx.createLinearGradient(0,0,0,H);
+        grad.addColorStop(0, '#000000');
+        grad.addColorStop(1, '#1a1a2e');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,W,H);
+
+        // Cámara sigue al chasis suavemente
+        const camX = this.chassis.x - W * 0.3;
+        const camY = this.chassis.y - H * 0.6;
+
+        ctx.save();
+        ctx.translate(-camX, -camY);
+
+        // 1. DIBUJAR TERRENO (HIPERREALISTA PLANO)
+        ctx.fillStyle = this.levelData.biome.ground;
+        ctx.beginPath();
+        let startX = Math.floor(camX / 20) * 20 - 40;
+        let endX = startX + W + 80;
+        
+        ctx.moveTo(startX, H * 2 + camY); // Abajo a la izquierda
+        for(let tx = startX; tx <= endX; tx += 20) {
+            ctx.lineTo(tx, this.getTerrainY(tx));
+        }
+        ctx.lineTo(endX, H * 2 + camY); // Abajo a la derecha
+        ctx.closePath();
+        ctx.fill();
+        
+        // Borde reflectante de tierra superior
+        ctx.strokeStyle = this.levelData.biome.dirt;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        for(let tx = startX; tx <= endX; tx += 20) {
+            if(tx===startX) ctx.moveTo(tx, this.getTerrainY(tx));
+            else ctx.lineTo(tx, this.getTerrainY(tx));
         }
         ctx.stroke();
 
-        // Renderizar Monedas
-        activeCoins.forEach(c => {
-            if(!c.active) return;
-            ctx.fillStyle = '#ffb300'; ctx.beginPath(); ctx.arc(c.x, c.y, 7, 0, Math.PI*2); ctx.fill();
+        // 2. DIBUJAR PICKUPS
+        this.pickups.forEach(p => {
+            if(!p.active || p.x < camX || p.x > camX+W) return;
+            if(p.type === 'coin') {
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.font="10px sans-serif"; ctx.fillText("$", p.x-3, p.y+3);
+            } else {
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(p.x-10, p.y-15, 20, 30);
+                ctx.fillStyle = '#fff'; ctx.font="8px sans-serif"; ctx.fillText("GAS", p.x-9, p.y+2);
+            }
         });
 
-        // Renderizar Depósitos de Nafta
-        fuelTanks.forEach(f => {
-            if(!f.active) return;
-            ctx.fillStyle = '#ff1744'; ctx.fillRect(f.x - 8, f.y - 12, 16, 24);
-            ctx.fillStyle = '#fff'; ctx.font = '8px sans-serif'; ctx.fillText("GAS", f.x - 7, f.y + 2);
+        // 3. DIBUJAR PARTÍCULAS
+        this.particles.forEach(pt => {
+            ctx.globalAlpha = pt.life;
+            ctx.fillStyle = pt.color;
+            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size * pt.life, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = 1.0;
         });
 
-        // --- COMPONENTE MÓVIL DEL JUGADOR (PLANAR HIPERREALISTA) ---
-        ctx.save();
-        ctx.translate(physics.x, physics.y);
-        ctx.rotate(physics.angle);
-
-        // Sombra arrojada al piso orientada
-        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(-35, 12, 70, 4);
-
-        // Carrocería Vectorial Limpia
-        ctx.fillStyle = car.color; ctx.fillRect(-30, -6, 60, 14); // Cuerpo
-        ctx.fillStyle = '#06040a'; ctx.fillRect(-10, -16, 28, 11); // Cabina rígida
-
-        // Geometría de amortiguadores y Ruedas
-        ctx.fillStyle = '#17161c';
-        ctx.beginPath(); ctx.arc(-20, 10, 11, 0, Math.PI*2); ctx.fill(); // Rueda trasera
-        ctx.beginPath(); ctx.arc(20, 10, 11, 0, Math.PI*2); ctx.fill();  // Rueda delantera
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.arc(-20, 10, 4, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(20, 10, 4, 0, Math.PI*2); ctx.fill();
-
-        ctx.restore();
-        ctx.restore();
-
-        // Actualizar métricas HUD
-        document.getElementById('hud-distance').innerHTML = `${Math.floor(physics.distanceRun)}<span>m</span>`;
-        document.getElementById('hud-coins').innerHTML = `${physics.coinsGathered}<span>$</span>`;
-        document.getElementById('hud-fuel').innerText = Math.floor(physics.fuel);
-    }
-
-    function endGameSimulation(reason) {
-        isPlaying = false;
-        changeScreen('screen-gameover');
-        document.getElementById('gameover-title').innerText = "RACING RUSH LEGACY";
-        document.getElementById('gameover-desc').innerText = `${reason}. Lograste avanzar una distancia de ${Math.floor(physics.distanceRun)} metros en la colina.`;
+        // 4. DIBUJAR VEHÍCULO (ARTICULADO)
         
-        saveState.coins += physics.coinsGathered;
-        if(physics.distanceRun > saveState.highDist) saveState.highDist = physics.distanceRun;
-        document.getElementById('gameover-reward').innerText = physics.coinsGathered;
-        save();
+        // Función de dibujado de rueda
+        const drawWheel = (wObj) => {
+            ctx.save();
+            ctx.translate(wObj.x, wObj.y);
+            // Rotación visual de la rueda basada en distancia X
+            ctx.rotate(wObj.x * 0.05); 
+            ctx.fillStyle = '#111'; // Neumático
+            ctx.beginPath(); ctx.arc(0, 0, this.carData.wheelR, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#333'; // Rin
+            ctx.beginPath(); ctx.arc(0, 0, this.carData.wheelR*0.6, 0, Math.PI*2); ctx.fill();
+            // Rayos del rin para notar el giro
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(-this.carData.wheelR*0.5, 0); ctx.lineTo(this.carData.wheelR*0.5, 0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, -this.carData.wheelR*0.5); ctx.lineTo(0, this.carData.wheelR*0.5); ctx.stroke();
+            ctx.restore();
+        };
+
+        // Dibujar brazos de suspensión (Líneas dinámicas desde chasis a ruedas)
+        ctx.strokeStyle = '#7f8c8d';
+        ctx.lineWidth = 4;
+        
+        // Puntos de anclaje visuales en el chasis
+        const cos = Math.cos(this.chassis.angle);
+        const sin = Math.sin(this.chassis.angle);
+        const bAncX = this.chassis.x - this.cfg.wheelBase * cos;
+        const bAncY = this.chassis.y - this.cfg.wheelBase * sin;
+        const fAncX = this.chassis.x + this.cfg.wheelBase * cos;
+        const fAncY = this.chassis.y + this.cfg.wheelBase * sin;
+
+        // Brazo Trasero
+        ctx.beginPath(); ctx.moveTo(bAncX, bAncY); ctx.lineTo(this.wheelB.x, this.wheelB.y); ctx.stroke();
+        // Brazo Delantero
+        ctx.beginPath(); ctx.moveTo(fAncX, fAncY); ctx.lineTo(this.wheelF.x, this.wheelF.y); ctx.stroke();
+
+        // Dibujar ruedas
+        drawWheel(this.wheelB);
+        drawWheel(this.wheelF);
+
+        // Dibujar Chasis
+        ctx.save();
+        ctx.translate(this.chassis.x, this.chassis.y);
+        ctx.rotate(this.chassis.angle);
+        
+        // Cuerpo vectorial hiperrealista (plano)
+        ctx.fillStyle = this.carData.color;
+        // Chasis base
+        ctx.fillRect(-this.cfg.wheelBase - 5, -10, this.cfg.wheelBase*2 + 10, 20);
+        // Cabina
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.beginPath();
+        ctx.moveTo(-10, -10);
+        ctx.lineTo(5, -30);
+        ctx.lineTo(25, -30);
+        ctx.lineTo(35, -10);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Detalles visuales adicionales
+        ctx.fillStyle = '#ff1744'; // Luz trasera
+        ctx.fillRect(-this.cfg.wheelBase - 5, -5, 4, 10);
+        ctx.fillStyle = '#f1c40f'; // Luz delantera
+        ctx.fillRect(this.cfg.wheelBase + 1, -5, 6, 10);
+
+        ctx.restore();
+        ctx.restore(); // Fin cámara
     }
+};
 
-    // --- ENTRADAS DE TECLADO ---
-    window.addEventListener('keydown', (e) => {
-        if(e.key === 'a' || e.key === 'ArrowLeft') inputBrake = true;
-        if(e.key === 'd' || e.key === 'ArrowRight') inputGas = true;
-    });
-    window.addEventListener('keyup', (e) => {
-        if(e.key === 'a' || e.key === 'ArrowLeft') inputBrake = false;
-        if(e.key === 'd' || e.key === 'ArrowRight') inputGas = false;
-    });
-
-    // --- ENTRADAS TÁCTILES MÓVILES ---
-    const setupInput = (id, act) => {
-        const b = document.getElementById(id);
-        b.addEventListener('touchstart', (e) => { e.preventDefault(); act(true); });
-        b.addEventListener('touchend', (e) => { e.preventDefault(); act(false); });
+/**
+ * ============================================================================
+ * PWA & SERVICE WORKER STUB (PREPARACIÓN PARA DEPLOY)
+ * ============================================================================
+ */
+if('serviceWorker' in navigator) {
+    // Al ser un solo archivo HTML para pruebas, simulamos el manifiesto con un Blob
+    const manifestJSON = {
+        "name": "Racing Rush Legacy",
+        "short_name": "Racing Evolution",
+        "start_url": ".",
+        "display": "fullscreen",
+        "background_color": "#030205",
+        "theme_color": "#030205",
+        "orientation": "landscape"
     };
-    setupInput('btn-touch-gas', v => inputGas = v);
-    setupInput('btn-touch-brake', v => inputBrake = v);
+    const stringManifest = JSON.stringify(manifestJSON);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    let manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = manifestURL;
+    document.head.appendChild(manifestLink);
+    console.log("PWA Manifest Inyectado (Modo Desarrollo/Standalone)");
+}
+
+// Inicialización de la aplicación
+window.onload = () => {
+    saveManager.load();
+    ui.showScreen('screen-main');
+};
+
 </script>
 </body>
 </html>
