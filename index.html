@@ -687,8 +687,16 @@ const ui = {
     currentScreen: 'screen-main',
     showScreen: function(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        this.currentScreen = id;
+// Cambia esto:
+// document.getElementById("pantallaJuego").classList.remove("hidden");
+
+// Por esto:
+const screenElement = document.getElementById("pantallaJuego"); // Usa el ID real de tu línea 690
+if (screenElement) {
+    screenElement.classList.remove("hidden"); // O la acción que estés haciendo
+} else {
+    console.warn("¡Ojo! El elemento no fue encontrado en el DOM.");
+}        this.currentScreen = id;
         
         if(id === 'screen-story') storyMode.renderMap();
         if(id === 'screen-garage') garage.init();
